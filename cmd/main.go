@@ -4,7 +4,6 @@ import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/conn"
 	"github.com/emersion/go-imap"
-	"github.com/emersion/go-imap/client"
 	"log"
 )
 
@@ -17,16 +16,16 @@ func main() {
 	}
 
 	// Connect to IMAP servers
-	conns := map[string]*client.Client{} //TODO create own type
-	for accName, accSettings := range cfg.Accounts {
-		if !accSettings.Connection.Enabled {
+	conns := map[string]*config.Account{}
+	for accName, acc := range cfg.Accounts {
+		if !acc.Connection.Enabled {
 			continue
 		}
-		if c, err := conn.Connect(*accSettings); err != nil {
+		if err := conn.Connect(acc); err != nil {
 			log.Fatalf("failed to connect (%v): %v", accName, err)
 
 		} else {
-			conns[accName] = c
+			conns[accName] = acc
 		}
 	}
 
@@ -36,12 +35,10 @@ func main() {
 		}
 	}()
 
-	// foo
-	log.Println(conns["asdasd"])
 	//log.Println(conns["local_imap_server2"].Check())
 
-	for _, conn := range conns {
-		log.Println(conn.State(), imap.AuthenticatedState)
+	for _, acc := range conns {
+		log.Println(acc.Connection.Client.State(), imap.AuthenticatedState)
 	}
 
 	// List mailboxes

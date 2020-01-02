@@ -4,6 +4,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/imdario/mergo"
 	"io/ioutil"
+	"github.com/emersion/go-imap/client"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,7 @@ type Account struct {
 		IMAPS     bool  `yaml:"imaps"`
 		Starttls  *bool `yaml:"starttls"`
 		TLSVerify *bool `yaml:"tlsverify"`
+		Client *client.Client //TODO custom type?
 	} `yaml:"connection"`
 
 	Filters map[string]struct {

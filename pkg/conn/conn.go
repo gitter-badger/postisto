@@ -7,8 +7,7 @@ import (
 	"github.com/emersion/go-imap/client"
 )
 
-func Connect(acc config.Account) (*client.Client, error) {
-	var c *client.Client
+func Connect(acc *config.Account) error {
 	var err error
 
 	tlsConfig := &tls.Config{
@@ -18,33 +17,33 @@ func Connect(acc config.Account) (*client.Client, error) {
 	}
 
 	if acc.Connection.IMAPS {
-		c, err = client.DialTLS(fmt.Sprintf("%v:%v", acc.Connection.Server, acc.Connection.Port), tlsConfig)
+		acc.Connection.Client, err = client.DialTLS(fmt.Sprintf("%v:%v", acc.Connection.Server, acc.Connection.Port), tlsConfig)
 
 	} else {
-		c, err = client.Dial(fmt.Sprintf("%v:%v", acc.Connection.Server, acc.Connection.Port))
+		acc.Connection.Client, err = client.Dial(fmt.Sprintf("%v:%v", acc.Connection.Server, acc.Connection.Port))
 
 		if err != nil {
-			return c, err
+			return err
 		}
 
 		if *acc.Connection.Starttls {
-			err = c.StartTLS(tlsConfig)
+			err = acc.Connection.Client.StartTLS(tlsConfig)
 		}
 	}
 
 	if err != nil {
-		return c, err
+		return err
 	}
 
-	err = c.Login(acc.Connection.Username, acc.Connection.Password)
+	err = acc.Connection.Client.Login(acc.Connection.Username, acc.Connection.Password)
 
-	return c, err
+	return err
 }
 
-func DisconnectAll(conns map[string]*client.Client) error {
+func DisconnectAll(conns map[string]*config.Account) error {
 	var err error
-	for _, c := range conns {
-		err = c.Logout() //TODO that's evil. we're overring err all the time
+	for _, acc := range conns {
+		err = acc.Connection.Client.Logout() //TODO that's evil. we're overring err all the time
 	}
 	return err
 }

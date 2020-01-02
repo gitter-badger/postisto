@@ -18,7 +18,10 @@ func TestGetConfig(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("imap.server.de", cfg.Accounts["test"].Server)
 
-	// Test failed file/dir loading
-	cfg, err = GetConfig("../test/configs/does-not-exist")
-	assert.EqualError(err, "stat ../test/configs/does-not-exist: no such file or directory")
+	// Failed file/dir loading
+	cfg, err = GetConfig("../tests/configs/does-not-exist")
+	assert.EqualError(err, "stat ../tests/configs/does-not-exist: no such file or directory")
+
+	cfg, err = GetConfig("../tests/configs/invalid")
+	assert.EqualError(err, "yaml: control characters are not allowed")
 }

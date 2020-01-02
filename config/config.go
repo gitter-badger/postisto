@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -42,10 +43,11 @@ func GetConfig(configPath string) (Config, error) {
 	if stat.IsDir() {
 		err := filepath.Walk(configPath,
 			func(path string, info os.FileInfo, err error) error {
+				//log.Println(path)
 				if err != nil {
 					return err
 				}
-				if stat, _ := os.Stat(path); !stat.IsDir() {
+				if stat, _ := os.Stat(path); !stat.IsDir() && (strings.HasSuffix(path, ".yml") || strings.HasSuffix(path, ".yaml")) {
 					configFiles = append(configFiles, path)
 				}
 				return nil
@@ -58,6 +60,7 @@ func GetConfig(configPath string) (Config, error) {
 	}
 
 	for _, file := range configFiles {
+		//log.Printf(">>> %v", file)
 		fileCfg := Config{}
 		yamlFile, err := ioutil.ReadFile(file)
 
@@ -67,6 +70,11 @@ func GetConfig(configPath string) (Config, error) {
 		}
 
 		err = yaml.Unmarshal(yamlFile, &fileCfg)
+
+		if err != nil {
+			//log.Fatalf("Error unmarshing config file %v: %v", file, err)
+			return cfg, err
+		}
 
 		if err := mergo.Merge(&cfg, fileCfg, mergo.WithOverride); err != nil {
 			log.Fatalf("yooo %v", err)

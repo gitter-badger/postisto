@@ -94,7 +94,7 @@ func main() {
 
 	log.Println("Last 4 messages:")
 	for msg := range messages {
-		log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].Address())
+		log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].MailboxName)
 	}
 
 	log.Printf("%v - %v", mbox.Items, mbox.Messages)

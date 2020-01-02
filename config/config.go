@@ -65,7 +65,7 @@ func GetConfig(configPath string) (Config, error) {
 		yamlFile, err := ioutil.ReadFile(file)
 
 		if err != nil {
-			log.Fatalf("Error reading config file %v: %v", file, err)
+			//log.Fatalf("Error reading config file %v: %v", file, err)
 			return cfg, err
 		}
 

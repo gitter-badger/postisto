@@ -1,50 +1,64 @@
 package main
 
 import (
-	"bytes"
-	"github.com/arnisoph/postisto/config"
+	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/arnisoph/postisto/pkg/conn"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
 	"log"
-	"os"
-	"time"
 )
 
 func main() {
-	log.Println("Connecting to server...")
-
-	// Connect to server
-	c, err := client.Dial("localhost:10143")
-
-	if err != nil {
-		log.Fatal(err)
+	// Load user config
+	var cfg config.Config
+	var err error
+	if cfg, err = config.GetConfig("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/tests/configs/valid/"); err != nil {
+		log.Panicf("failed to load config: %v", err)
 	}
-	log.Println("Connected")
 
-	// Don't forget to logout
-	defer c.Logout()
+	// Connect to IMAP servers
+	conns := map[string]*client.Client{} //TODO create own type
+	for accName, accSettings := range cfg.Accounts {
+		if !accSettings.Connection.Enabled {
+			continue
+		}
+		if c, err := conn.Connect(*accSettings); err != nil {
+			log.Fatalf("failed to connect (%v): %v", accName, err)
 
-	// Login
-	if err := c.Login("test-42@example.com", "test"); err != nil {
-		log.Fatal(err)
+		} else {
+			conns[accName] = c
+		}
 	}
-	log.Println("Logged in")
 
-	// List mailboxes
-	mailboxes := make(chan *imap.MailboxInfo, 11)
-	done := make(chan error, 1)
-	go func() {
-		done <- c.List("", "*", mailboxes)
+	defer func() {
+		if err := conn.DisconnectAll(conns); err != nil {
+			log.Panic("failed to discoonect account", err)
+		}
 	}()
 
-	log.Println("Mailboxes:")
-	for m := range mailboxes {
-		log.Println("* " + m.Name)
+	// foo
+	log.Println(conns["asdasd"])
+	//log.Println(conns["local_imap_server2"].Check())
+
+	for _, conn := range conns {
+		log.Println(conn.State(), imap.AuthenticatedState)
 	}
 
-	if err := <-done; err != nil {
-		log.Fatal(err)
-	}
+	// List mailboxes
+	//mailboxes := make(chan *imap.MailboxInfo, 11)
+	//done := make(chan error, 1)
+	//go func() {
+	//	done <- c.List("", "*", mailboxes)
+	//}()
+
+	//log.Println("Mailboxes:")
+	//for m := range mailboxes {
+	//	log.Println("* " + m.Name)
+	//}
+
+	//if err := <-done; err != nil {
+	//	log.Fatal(err)
+	//}
 
 	//if err := <-done; err != nil {
 	//	log.Fatal(err)
@@ -56,51 +70,98 @@ func main() {
 	//	log.Fatal(err)
 	//}
 
-	data, err := os.Open("/Users/ab/Documents/dev/github/tabellarius/tests/mails/log1.txt")
-	if err != nil {
-		log.Fatalf("-> %v", err)
-	}
-	defer data.Close()
+	//data, err := os.Open("/Users/ab/Documents/dev/github/tabellarius/tests/mails/log1.txt")
+	//if err != nil {
+	//	log.Fatalf("-> %v", err)
+	//}
+	//defer data.Close()
+	//
+	//b := bytes.NewBuffer(nil)
+	//b.ReadFrom(data)
+	//
+	//if err := c.Append("test123", []string{}, time.Now(), b); err != nil {
+	//	log.Fatal(err)
+	//}
+	/*
+		// Select INBOX
+		mbox, err := c.Select("test123", false)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//log.Println("Flags for test123:", mbox.Flags)
 
-	b := bytes.NewBuffer(nil)
-	b.ReadFrom(data)
+		// Get the last 4 messages
+		from := uint32(1)
+		to := mbox.Messages
+		if mbox.Messages > 3 {
+			// We're using unsigned integers here, only substract if the result is > 0
+			from = mbox.Messages - 3
+		}
+		seqset := new(imap.SeqSet)
+		seqset.AddRange(from, to)
 
-	if err := c.Append("test123", []string{}, time.Now(), b); err != nil {
-		log.Fatal(err)
-	}
+		var section imap.BodySectionName
+		section.Specifier = imap.HeaderSpecifier
+		items := []imap.FetchItem{section.FetchItem()}
 
-	// Select INBOX
-	mbox, err := c.Select("test123", false)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Flags for test123:", mbox.Flags)
+		messages := make(chan *imap.Message, 10)
+		done := make(chan error, 1)
+		go func() {
+			err := c.Fetch(seqset, items, messages)
+			if err != nil {
+				log.Println("yoerr:", err)
+			}
+			done <- err
+		}()
+	*/
+	//msg := <-messages
+	//raw := msg.GetBody(section)
+	//if raw == nil {
+	//	log.Fatal("Server didn't returned message body")
+	//}
+	//
+	//if err := <-done; err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//m, err := mail.ReadMessage(raw)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
-	// Get the last 4 messages
-	from := uint32(1)
-	to := mbox.Messages
-	if mbox.Messages > 3 {
-		// We're using unsigned integers here, only substract if the result is > 0
-		from = mbox.Messages - 3
-	}
-	seqset := new(imap.SeqSet)
-	seqset.AddRange(from, to)
+	//for msg := range messages {
+	//	r := msg.GetBody(&section)
+	//
+	//	if r == nil {
+	//		log.Fatal("Server didn't returned message body")
+	//	}
+	//
+	//	m, err := mail.CreateReader(r)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	fields := m.Header.FieldsByKey("received")
+	//	for {
+	//		next := fields.Next()
+	//		if !next { break }
+	//		log.Println(fields.Key(), " => ", fields.Value())
+	//
+	//	}
+	//
+	//	date, _ := m.Header.Date()
+	//	sub, _ := m.Header.Subject()
+	//	from, _ := m.Header.AddressList("from")
+	//	log.Println(date.Local(), sub, from[0].Name, )
+	//
+	//	//log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].MailboxName, msg)
+	//	//raw := msg.GetBody(section)
+	//	//m, _ := mail.ReadMessage(raw)
+	//	//log.Println(m.Header.Get("Received"))
+	//	log.Println("============================================")
+	//}
 
-	messages := make(chan *imap.Message, 10)
-	done = make(chan error, 1)
-	go func() {
-		done <- c.Fetch(seqset, []imap.FetchItem{imap.FetchEnvelope}, messages)
-	}()
-
-	log.Println("Last 4 messages:")
-	for msg := range messages {
-		log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].MailboxName)
-	}
-
-	log.Printf("%v - %v", mbox.Items, mbox.Messages)
+	//log.Printf("%v - %v", mbox.Items, mbox.Messages)
 
 	log.Println("Done!")
 
-	cfg, err := config.GetConfig("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/tabellarius2/tests/configs/valid")
-	log.Println(err, cfg.Filters["test"]["test_unicode_from"].Rules)
 }

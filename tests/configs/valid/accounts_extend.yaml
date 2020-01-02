@@ -2,10 +2,20 @@
 
 accounts:
   local_imap_server:
-    enabled: true
-    server: 127.0.0.1
-    port: 10143
-    starttls: true
-    tlsverify: false
-    username: test
-    password: test
+    connection:
+      enabled: true
+      server: localhost
+      port: 10143
+      imaps: false
+      #tlsverify: false
+      username: test-42@example.com
+      password: test
+  local_imap_server2:
+    connection:
+      enabled: false
+      server: localhost
+      port: 10143
+      imaps: false
+      #tlsverify: false
+      username: test-42@example.com
+      password: test

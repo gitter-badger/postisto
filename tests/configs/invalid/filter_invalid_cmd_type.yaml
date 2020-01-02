@@ -1,10 +1,11 @@
-filters:
-  test_errors:
-    test_invalid_cmd_type:
-      commands:
-        - type: InvalidCmdType
-          target: Trash
-      rules:
-        - or:
-            - foo:
-              - bar
+accounts:
+  test:
+    filters:
+      test_invalid_cmd_type:
+        commands:
+          - type: InvalidCmdType
+            target: Trash
+        rules:
+          - or:
+              - foo:
+                - bar

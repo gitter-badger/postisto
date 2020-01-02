@@ -1,10 +1,10 @@
 package config
 
 import (
+	"github.com/emersion/go-imap/client"
 	"github.com/goccy/go-yaml"
 	"github.com/imdario/mergo"
 	"io/ioutil"
-	"github.com/emersion/go-imap/client"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,10 +28,10 @@ type Account struct {
 		Password     string        `yaml:"password"`
 		InputMailbox *InputMailbox `yaml:"input_mailbox"`
 		//SortMailbox string `yaml:"sort_mailbox"`
-		IMAPS     bool  `yaml:"imaps"`
-		Starttls  *bool `yaml:"starttls"`
-		TLSVerify *bool `yaml:"tlsverify"`
-		Client *client.Client //TODO custom type?
+		IMAPS     bool           `yaml:"imaps"`
+		Starttls  *bool          `yaml:"starttls"`
+		TLSVerify *bool          `yaml:"tlsverify"`
+		Client    *client.Client //TODO custom type?
 	} `yaml:"connection"`
 
 	Filters map[string]struct {

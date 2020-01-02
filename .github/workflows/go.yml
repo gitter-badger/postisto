@@ -44,5 +44,7 @@ jobs:
           go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: upload code coverage
+        env: # Or as an environment variable
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           bash <(curl -s https://codecov.io/bash)

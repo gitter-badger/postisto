@@ -17,4 +17,8 @@ func TestGetConfig(t *testing.T) {
 	cfg, err = GetConfig("../tests/configs/valid/")
 	assert.Nil(err)
 	assert.Equal("imap.server.de", cfg.Accounts["test"].Server)
+
+	// Test failed file/dir loading
+	cfg, err = GetConfig("../test/configs/does-not-exist")
+	assert.EqualError(err, "stat ../test/configs/does-not-exist: no such file or directory")
 }

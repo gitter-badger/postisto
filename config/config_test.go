@@ -22,6 +22,10 @@ func TestGetConfig(t *testing.T) {
 	cfg, err = GetConfig("../tests/configs/does-not-exist")
 	assert.EqualError(err, "stat ../tests/configs/does-not-exist: no such file or directory")
 
-	cfg, err = GetConfig("../tests/configs/invalid")
+	cfg, err = GetConfig("../tests/configs/invalid/")
 	assert.EqualError(err, "yaml: control characters are not allowed")
+
+	cfg, err = GetConfig("../tests/configs/invalid-unreadable-file/")
+	assert.EqualError(err, "yaml: control characters are not allowed") // chmod 000 tests/configs/invalid-unreadable-file/unreadable-file.testfile.yaml
+
 }

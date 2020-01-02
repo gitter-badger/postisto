@@ -3,3 +3,4 @@ vendor/
 .idea/
 postisto
 coverage.txt
+tests/configs/invalid-unreadable-file.testfile.yaml

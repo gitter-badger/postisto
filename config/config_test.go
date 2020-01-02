@@ -26,7 +26,8 @@ func TestGetConfig(t *testing.T) {
 	cfg, err = GetConfig("../tests/configs/invalid/")
 	assert.EqualError(err, "yaml: control characters are not allowed")
 
-	err = os.Chmod("../tests/configs/invalid-unreadable-file/unreadable-file.testfile.yaml", 000)
+	_, err = os.Create("../tests/configs/invalid-unreadable-file/unreadable-file.testfile.yaml")
+	err = os.Chmod("../tests/configs/invalid-unreadable-file/unreadable-file.testfile.yaml", 0000)
 	assert.Nil(err)
 	cfg, err = GetConfig("../tests/configs/invalid-unreadable-file/")
 	assert.EqualError(err, "open ../tests/configs/invalid-unreadable-file/unreadable-file.testfile.yaml: permission denied")

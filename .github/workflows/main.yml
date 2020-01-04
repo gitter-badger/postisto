@@ -42,6 +42,10 @@ jobs:
 
       - name: setup integration env
         run: |
+          apt update -qq && apt install ca-certificates -y
+          mkdir -p mkdir /usr/share/ca-certificates/extra/
+          cp test/data/ca.crt /usr/share/ca-certificates/extra/
+          update-ca-certificates
           docker run -d -p 10143:143 -p 10993:993 -p 6379:6379 -v /dev/random:/dev/random:ro --name postisto-test-server bechtoldt/tabellarius_tests-docker || true
 
       - name: go test

@@ -45,7 +45,7 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	var fetchedMails []*imap.Message
 	uids, err := searchMails(acc)
 
-	if err != nil || len(fetchedMails) == 0 {
+	if err != nil || len(uids) == 0 {
 		return fetchedMails, nil
 	}
 
@@ -131,3 +131,20 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 
 	return fetchedMails, err
 }
+
+//log.Println("Creating new mailboxes..")
+//if err := c.Create("test123"); err != nil {
+//	log.Fatal(err)
+//}
+
+// List mailboxes
+//mailboxes := make(chan *imap.MailboxInfo, 11)
+//done := make(chan error, 1)
+//go func() {
+//	done <- c.List("", "*", mailboxes)
+//}()
+
+//log.Println("Mailboxes:")
+//for m := range mailboxes {
+//	log.Println("* " + m.Name)
+//}

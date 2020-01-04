@@ -40,6 +40,7 @@ type AccountConnection struct {
 	TLSVerify       *bool          `yaml:"tlsverify"`
 	TLSCACertFile   string         `yaml:"cacertfile"`
 	Client          *client.Client //TODO custom type?
+	Debug           bool           `yaml:"debug"` //TODO => use with log setting/level!
 }
 
 type InputMailbox struct {

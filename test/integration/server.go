@@ -35,6 +35,7 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
+			//Debug:         true,
 		},
 	}
 

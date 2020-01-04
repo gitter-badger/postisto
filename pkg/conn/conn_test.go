@@ -27,8 +27,8 @@ func TestConnect(t *testing.T) {
 	}
 
 	defer func() {
-		for _, err := range DisconnectAll(accs) {
-			assert.Nil(err)
+		for _, acc := range accs {
+			assert.Nil(Disconnect(acc))
 		}
 	}()
 

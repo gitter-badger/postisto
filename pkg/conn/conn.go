@@ -7,6 +7,7 @@ import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/emersion/go-imap/client"
 	"io/ioutil"
+	"os"
 )
 
 func Connect(acc *config.Account) error {
@@ -51,20 +52,20 @@ func Connect(acc *config.Account) error {
 		return err
 	}
 
+	if acc.Connection.Debug {
+		acc.Connection.Client.SetDebug(os.Stderr)
+	}
+
 	err = acc.Connection.Client.Login(acc.Connection.Username, acc.Connection.Password)
 
 	return err
 }
 
-func DisconnectAll(accs map[string]*config.Account) map[string]error {
-	err := map[string]error{}
+func Disconnect(acc *config.Account) error {
 
-	for name, acc := range accs {
-		if acc.Connection.Client == nil {
-			// no connection
-			continue
-		}
-		err[name] = acc.Connection.Client.Logout()
+	if acc.Connection.Client == nil {
+		// no connection
+		return nil
 	}
-	return err
+	return acc.Connection.Client.Logout()
 }

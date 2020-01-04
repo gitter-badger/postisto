@@ -1,7 +1,8 @@
-name: Go
-on: [push]
-jobs:
+name: main
+on:
+  - push
 
+jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -38,6 +39,10 @@ jobs:
       - name: Get dependencies
         run: |
           go mod download
+
+      - name: setup integration env
+        run: |
+          docker run -d -p 10143:143 -p 10993:993 -p 6379:6379 -v /dev/random:/dev/random:ro --name postisto-test-server bechtoldt/tabellarius_tests-docker || true
 
       - name: go test
         run: |

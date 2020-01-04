@@ -23,6 +23,7 @@ func TestGetConfig(t *testing.T) {
 	// Load full config dir
 	require.DirExists("../../test/data/configs/valid/")
 	cfg, err = cfg.Load("../../test/data/configs/valid/")
+	//fmt.Println(yaml.FormatError(err, true, true))
 	require.Nil(err)
 	assert.Equal("imap.server.de", cfg.Accounts["test"].Connection.Server)
 

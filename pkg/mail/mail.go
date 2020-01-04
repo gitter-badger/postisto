@@ -2,9 +2,13 @@ package mail
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/emersion/go-imap"
+	"github.com/emersion/go-imap-move"
 	"os"
+	"strings"
+
 	"time"
 )
 
@@ -56,7 +60,7 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 
 	var section imap.BodySectionName
 	section.Specifier = imap.HeaderSpecifier // Loads all headers only (no body)
-	items := []imap.FetchItem{section.FetchItem()}
+	items := []imap.FetchItem{section.FetchItem(), imap.FetchUid}
 
 	imapMessages := make(chan *imap.Message, 10)
 	done := make(chan error, 1)
@@ -132,10 +136,23 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	return fetchedMails, err
 }
 
-//log.Println("Creating new mailboxes..")
-//if err := c.Create("test123"); err != nil {
-//	log.Fatal(err)
-//}
+func DeleteMail(acc *config.Account, mailbox string, uid uint32) error {
+	return SetMailFlags(acc, mailbox, uid, "+FLAGS", []interface{}{imap.DeletedFlag})
+}
+
+func SetMailFlags(acc *config.Account, mailbox string, uid uint32, flagOp string, flags []interface{}) error {
+
+	if _, err := acc.Connection.Client.Select(mailbox, false); err != nil {
+		return err
+	}
+
+	seqset := imap.SeqSet{}
+	seqset.AddNum(uid)
+
+	item := imap.FormatFlagsOp(imap.FlagsOp(flagOp), true)
+
+	return acc.Connection.Client.UidStore(&seqset, item, flags, nil)
+}
 
 // List mailboxes
 //mailboxes := make(chan *imap.MailboxInfo, 11)
@@ -148,3 +165,58 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 //for m := range mailboxes {
 //	log.Println("* " + m.Name)
 //}
+
+func CreateMailbox(acc *config.Account, name string) error {
+	return acc.Connection.Client.Create(name)
+}
+
+//func MoveMail(acc *config.Account, mailbox string, uid uint32) error {
+//	// Move BY COPYing and Deleting it
+//	var err error
+//	seqset := imap.SeqSet{}
+//	seqset.AddNum(uid)
+//
+//	if err := acc.Connection.Client.Copy(&seqset, mailbox); err != nil {
+//		if strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) {
+//			// COPY failed becuase the target mailbox doesn't exist. Create it.
+//			if err := CreateMailbox(acc, mailbox); err != nil {
+//				return err
+//			}
+//
+//			// Now retry COPY
+//			if err := acc.Connection.Client.Copy(&seqset, mailbox); err != nil {
+//				return err
+//			}
+//		}
+//	}
+//
+//	// COPY to the new target mailbox seems to be successful. We can delete the mail from the old mailbox.
+//	if err := DeleteMail(acc, mailbox, uid); err != nil {
+//		return err
+//	}
+//
+//	return err
+//}
+
+func MoveMail(acc *config.Account, uid uint32, mailbox string) error {
+	var err error
+	seqset := imap.SeqSet{}
+	seqset.AddNum(uid)
+
+	moveClient := move.NewClient(acc.Connection.Client)
+
+	err = moveClient.UidMove(&seqset, mailbox)
+
+	if err != nil && strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) {
+		// MOVE failed because the target mailbox did not exist. Create it and try again.
+		if err = CreateMailbox(acc, mailbox); err != nil {
+			return err
+		}
+
+		if err = moveClient.UidMove(&seqset, mailbox); err != nil {
+			return err
+		}
+	}
+
+	return err
+}

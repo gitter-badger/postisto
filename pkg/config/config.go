@@ -1,7 +1,8 @@
 package config
 
 import (
-	"github.com/emersion/go-imap/client"
+	"fmt"
+	imapClient "github.com/emersion/go-imap/client"
 	"github.com/goccy/go-yaml"
 	"github.com/imdario/mergo"
 	"io/ioutil"
@@ -21,31 +22,42 @@ type Config struct {
 
 type Account struct {
 	Connection AccountConnection `yaml:"connection"`
-	Filters    map[string]struct {
-		Commands []map[string]interface{} `yaml:"commands"`
-		Rules    []map[string]interface{} `yaml:"rules"`
-	} `yaml:"filters"`
+	Filters    map[string]Filter `yaml:"filters"`
 }
 
 type AccountConnection struct {
-	Enabled         bool           `yaml:"enabled"`
-	Server          string         `yaml:"server"`
-	Port            int            `yaml:"port"`
-	Username        string         `yaml:"username"`
-	Password        string         `yaml:"password"`
-	InputMailbox    *InputMailbox  `yaml:"input"`
-	FallbackMailbox string         `yaml:"fallback_mailbox"`
-	IMAPS           bool           `yaml:"imaps"`
-	Starttls        *bool          `yaml:"starttls"`
-	TLSVerify       *bool          `yaml:"tlsverify"`
-	TLSCACertFile   string         `yaml:"cacertfile"`
-	Client          *client.Client //TODO custom type?
-	Debug           bool           `yaml:"debug"` //TODO => use with log setting/level!
+	Enabled         bool               `yaml:"enabled"`
+	Server          string             `yaml:"server"`
+	Port            int                `yaml:"port"`
+	Username        string             `yaml:"username"`
+	Password        string             `yaml:"password"`
+	InputMailbox    *InputMailbox      `yaml:"input"`
+	FallbackMailbox string             `yaml:"fallback_mailbox"`
+	IMAPS           bool               `yaml:"imaps"`
+	Starttls        *bool              `yaml:"starttls"`
+	TLSVerify       *bool              `yaml:"tlsverify"`
+	TLSCACertFile   string             `yaml:"cacertfile"`
+	Client          *imapClient.Client //TODO custom type?
+	Debug           bool               `yaml:"debug"` //TODO => use with log setting/level!
 }
+
+type Filter struct {
+	Commands []Command `yaml:"commands,flow"`
+	//Rules    []Rule    `yaml:"rules"`
+}
+
+type Command struct {
+	Type          string        `yaml:"type"`
+	Target        string        `yaml:"target"`
+	AddFlags      []interface{} `yaml:"add_flags,flow"`
+	OverrideFlags []string      `yaml:"set_flags,flow"`
+}
+
+type Rule []map[string]interface{}
 
 type InputMailbox struct {
 	Mailbox      string   `yaml:"mailbox"`
-	WithoutFlags []string `yaml:"without_flags"`
+	WithoutFlags []string `yaml:"without_flags,flow"`
 }
 
 func New() Config {
@@ -86,7 +98,7 @@ func (cfg Config) Load(configPath string) (Config, error) {
 		if err != nil {
 			return cfg, err
 		}
-
+		fmt.Println("unmarsh", file)
 		err = yaml.Unmarshal(yamlFile, &fileCfg)
 
 		if err != nil {

@@ -11,7 +11,7 @@ func main() {
 	// Load user config
 	var cfg config.Config
 	var err error
-	if cfg, err = config.GetConfig("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/tests/configs/valid/"); err != nil {
+	if cfg, err = config.GetConfig("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/configs/valid/"); err != nil {
 		log.Panicf("failed to load config: %v", err)
 	}
 
@@ -34,8 +34,6 @@ func main() {
 			log.Panic("failed to discoonect account", err)
 		}
 	}()
-
-	//log.Println(conns["local_imap_server2"].Check())
 
 	for _, acc := range conns {
 		log.Println(acc.Connection.Client.State(), imap.AuthenticatedState)

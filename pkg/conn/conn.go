@@ -12,7 +12,7 @@ func Connect(acc *config.Account) error {
 
 	tlsConfig := &tls.Config{
 		ServerName:         acc.Connection.Server,
-		InsecureSkipVerify: !*acc.Connection.TLSVerify,
+		InsecureSkipVerify: !*acc.Connection.TLSVerify, //TODO that's incredibely dangerous! do validation ourself here?
 		MinVersion:         tls.VersionTLS12,
 	}
 
@@ -40,10 +40,15 @@ func Connect(acc *config.Account) error {
 	return err
 }
 
-func DisconnectAll(conns map[string]*config.Account) error {
-	var err error
-	for _, acc := range conns {
-		err = acc.Connection.Client.Logout() //TODO that's evil. we're overring err all the time
+func DisconnectAll(accs map[string]*config.Account) map[string]error {
+	err := map[string]error{}
+
+	for name, acc := range accs {
+		if acc.Connection.Client == nil {
+			// no connection
+			continue
+		}
+		err[name] = acc.Connection.Client.Logout()
 	}
 	return err
 }

@@ -20,24 +20,25 @@ type Config struct {
 }
 
 type Account struct {
-	Connection struct {
-		Enabled      bool          `yaml:"enabled"`
-		Server       string        `yaml:"server"`
-		Port         int           `yaml:"port"`
-		Username     string        `yaml:"username"`
-		Password     string        `yaml:"password"`
-		InputMailbox *InputMailbox `yaml:"input_mailbox"`
-		//SortMailbox string `yaml:"sort_mailbox"`
-		IMAPS     bool           `yaml:"imaps"`
-		Starttls  *bool          `yaml:"starttls"`
-		TLSVerify *bool          `yaml:"tlsverify"`
-		Client    *client.Client //TODO custom type?
-	} `yaml:"connection"`
-
+	Connection AccountConnection `yaml:"connection"`
 	Filters map[string]struct {
 		Commands []map[string]interface{} `yaml:"commands"`
 		Rules    []map[string]interface{} `yaml:"rules"`
 	} `yaml:"filters"`
+}
+
+type AccountConnection struct {
+	Enabled      bool          `yaml:"enabled"`
+	Server       string        `yaml:"server"`
+	Port         int           `yaml:"port"`
+	Username     string        `yaml:"username"`
+	Password     string        `yaml:"password"`
+	InputMailbox *InputMailbox `yaml:"input_mailbox"`
+	//SortMailbox string `yaml:"sort_mailbox"`
+	IMAPS     bool           `yaml:"imaps"`
+	Starttls  *bool          `yaml:"starttls"`
+	TLSVerify *bool          `yaml:"tlsverify"`
+	Client    *client.Client //TODO custom type?
 }
 
 type InputMailbox struct {

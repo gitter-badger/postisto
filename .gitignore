@@ -1,6 +1,4 @@
 vendor/
-.vscode/
-.idea/
 postisto
 coverage.txt
-tests/configs/invalid-unreadable-file/
+test/data/configs/invalid-unreadable-file/

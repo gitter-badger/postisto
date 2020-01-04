@@ -3,15 +3,17 @@ package integration
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/redis.v4"
 	"math/rand"
+	"testing"
 	"time"
 )
 
-func NewAccount(port int, starttls bool, imaps bool, tlsverify bool, cacertfile *string) *config.Account {
+func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify bool, cacertfile *string) *config.Account {
 
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
+	require := require.New(t)
+	r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	if cacertfile == nil {
 		defaultcacert := "../../test/data/certs/ca.pem"
@@ -35,6 +37,12 @@ func NewAccount(port int, starttls bool, imaps bool, tlsverify bool, cacertfile 
 			TLSCACertFile: *cacertfile,
 		},
 	}
+
+	redisClient, err := NewRedisClient()
+	require.Nil(err)
+
+	err = NewIMAPUser(&acc, redisClient)
+	require.Nil(err)
 
 	return &acc
 }

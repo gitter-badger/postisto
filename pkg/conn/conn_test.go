@@ -14,14 +14,19 @@ func TestConnect(t *testing.T) {
 
 	redisClient, err := integration.NewRedisClient()
 	require.Nil(err)
-	accs := map[string]*config.Account{"main": integration.NewAccount()}
-	err = integration.NewIMAPUser(accs["main"], redisClient)
-	require.Nil(err)
+	accs := map[string]*config.Account{
+		"main": integration.NewAccount(10143, true, false, true),
+		"main_imaps": integration.NewAccount(10993, false, true, true),
+	}
 
-	err = Connect(accs["main"])
-	require.Nil(err)
+	require.Nil(integration.NewIMAPUser(accs["main"], redisClient))
+	require.Nil(integration.NewIMAPUser(accs["main_imaps"], redisClient))
+
+	require.Nil(Connect(accs["main"]))
+	require.Nil(Connect(accs["main_imaps"]))
+
 	defer func() {
-		for _, err := range DisconnectAll(accs) {
+		for _, err := range DisconnectAll(accs) { //TODO verify whether accs actually contians all accs
 			assert.Nil(err)
 		}
 	}()

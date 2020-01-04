@@ -8,26 +8,23 @@ import (
 	"time"
 )
 
-func NewAccount() *config.Account {
+func NewAccount(port int, starttls bool, imaps bool, tlsverify bool) *config.Account {
 
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-
-	starttls := true
-	tlsverify := true
 
 	acc := config.Account{
 		Connection: config.AccountConnection{
 			Enabled:  true,
 			Server:   "localhost",
-			Port:     10143,
+			Port:     port,
 			Username: fmt.Sprintf("test-%v@example.com", r1.Intn(10000)),
 			Password: "test",
 			InputMailbox: &config.InputMailbox{
 				Name:           "INBOX",
 				SearchCriteria: "UNSEEN UNFLAGGED",
 			},
-			IMAPS:         false,
+			IMAPS:         imaps,
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: "../../test/data/ca.pem",

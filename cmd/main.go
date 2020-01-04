@@ -9,9 +9,9 @@ import (
 
 func main() {
 	// Load user config
-	var cfg config.Config
 	var err error
-	if cfg, err = config.GetConfig("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/configs/valid/"); err != nil {
+	cfg := config.New()
+	if cfg, err = cfg.Load("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/configs/valid/"); err != nil {
 		log.Panicf("failed to load config: %v", err)
 	}
 
@@ -65,50 +65,6 @@ func main() {
 	//	log.Fatal(err)
 	//}
 
-	//data, err := os.Open("/Users/ab/Documents/dev/github/tabellarius/tests/mails/log1.txt")
-	//if err != nil {
-	//	log.Fatalf("-> %v", err)
-	//}
-	//defer data.Close()
-	//
-	//b := bytes.NewBuffer(nil)
-	//b.ReadFrom(data)
-	//
-	//if err := c.Append("test123", []string{}, time.Now(), b); err != nil {
-	//	log.Fatal(err)
-	//}
-	/*
-		// Select INBOX
-		mbox, err := c.Select("test123", false)
-		if err != nil {
-			log.Fatal(err)
-		}
-		//log.Println("Flags for test123:", mbox.Flags)
-
-		// Get the last 4 messages
-		from := uint32(1)
-		to := mbox.Messages
-		if mbox.Messages > 3 {
-			// We're using unsigned integers here, only substract if the result is > 0
-			from = mbox.Messages - 3
-		}
-		seqset := new(imap.SeqSet)
-		seqset.AddRange(from, to)
-
-		var section imap.BodySectionName
-		section.Specifier = imap.HeaderSpecifier
-		items := []imap.FetchItem{section.FetchItem()}
-
-		messages := make(chan *imap.Message, 10)
-		done := make(chan error, 1)
-		go func() {
-			err := c.Fetch(seqset, items, messages)
-			if err != nil {
-				log.Println("yoerr:", err)
-			}
-			done <- err
-		}()
-	*/
 	//msg := <-messages
 	//raw := msg.GetBody(section)
 	//if raw == nil {

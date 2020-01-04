@@ -28,28 +28,31 @@ type Account struct {
 }
 
 type AccountConnection struct {
-	Enabled      bool          `yaml:"enabled"`
-	Server       string        `yaml:"server"`
-	Port         int           `yaml:"port"`
-	Username     string        `yaml:"username"`
-	Password     string        `yaml:"password"`
-	InputMailbox *InputMailbox `yaml:"input_mailbox"`
-	//SortMailbox string `yaml:"sort_mailbox"`
-	IMAPS         bool           `yaml:"imaps"`
-	Starttls      *bool          `yaml:"starttls"`
-	TLSVerify     *bool          `yaml:"tlsverify"`
-	TLSCACertFile string         `yaml:"cacertfile"`
-	Client        *client.Client //TODO custom type?
+	Enabled         bool           `yaml:"enabled"`
+	Server          string         `yaml:"server"`
+	Port            int            `yaml:"port"`
+	Username        string         `yaml:"username"`
+	Password        string         `yaml:"password"`
+	InputMailbox    *InputMailbox  `yaml:"input"`
+	FallbackMailbox string         `yaml:"fallback_mailbox"`
+	IMAPS           bool           `yaml:"imaps"`
+	Starttls        *bool          `yaml:"starttls"`
+	TLSVerify       *bool          `yaml:"tlsverify"`
+	TLSCACertFile   string         `yaml:"cacertfile"`
+	Client          *client.Client //TODO custom type?
 }
 
 type InputMailbox struct {
-	Name           string `yaml:"name",default:"INBOx"`
-	SearchCriteria string `yaml:"search_criteria",default:"UNSEEN FLAGGED"`
+	Mailbox      string   `yaml:"mailbox"`
+	WithoutFlags []string `yaml:"without_flags"`
 }
 
-func GetConfig(configPath string) (Config, error) {
+func New() Config {
+	return Config{}
+}
 
-	cfg := Config{}
+func (cfg Config) Load(configPath string) (Config, error) {
+
 	var configFiles []string
 
 	stat, err := os.Stat(configPath)
@@ -95,10 +98,10 @@ func GetConfig(configPath string) (Config, error) {
 		}
 	}
 
-	return validate(cfg)
+	return cfg.validate()
 }
 
-func validate(cfg Config) (Config, error) {
+func (cfg Config) validate() (Config, error) {
 
 	// Accounts
 	for i := range cfg.Accounts {
@@ -118,7 +121,7 @@ func validate(cfg Config) (Config, error) {
 		}
 
 		if acc.Connection.InputMailbox == nil {
-			acc.Connection.InputMailbox = &InputMailbox{Name: "INBOX", SearchCriteria: "UNSEEN UNFLAGGED"}
+			acc.Connection.InputMailbox = &InputMailbox{Mailbox: "INBOX", WithoutFlags: []string{"\\Seen", "\\Flagged"}}
 		}
 	}
 

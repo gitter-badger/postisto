@@ -28,8 +28,8 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 			Username: fmt.Sprintf("test-%v@example.com", r1.Intn(10000)),
 			Password: "test",
 			InputMailbox: &config.InputMailbox{
-				Name:           "INBOX",
-				SearchCriteria: "UNSEEN UNFLAGGED",
+				Mailbox:      "INBOX",
+				WithoutFlags: []string{"\\Seen", "\\Flagged"},
 			},
 			IMAPS:         imaps,
 			Starttls:      &starttls,
@@ -38,16 +38,20 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 		},
 	}
 
-	redisClient, err := NewRedisClient()
+	redisClient, err := newRedisClient()
 	require.Nil(err)
 
-	err = NewIMAPUser(&acc, redisClient)
+	err = newIMAPUser(&acc, redisClient)
 	require.Nil(err)
 
 	return &acc
 }
 
-func NewIMAPUser(acc *config.Account, redisClient *redis.Client) error {
+func NewStandardAccount(t *testing.T) *config.Account {
+	return NewAccount(t, 10143, true, false, true, nil)
+}
+
+func newIMAPUser(acc *config.Account, redisClient *redis.Client) error {
 	dbs := [2]string{"userdb", "passdb"}
 	for _, db := range dbs {
 		key := fmt.Sprintf("dovecot/%v/%v", db, acc.Connection.Username)
@@ -61,7 +65,7 @@ func NewIMAPUser(acc *config.Account, redisClient *redis.Client) error {
 	return nil
 }
 
-func NewRedisClient() (*redis.Client, error) {
+func newRedisClient() (*redis.Client, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",

@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/emersion/go-imap v1.0.2
-	github.com/emersion/go-message v0.11.0 // indirect
+	github.com/emersion/go-message v0.11.0
 	github.com/fatih/color v1.8.0 // indirect
 	github.com/go-redis/redis/v7 v7.0.0-beta.5 // indirect
 	github.com/goccy/go-yaml v1.1.8

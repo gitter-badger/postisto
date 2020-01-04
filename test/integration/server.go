@@ -24,12 +24,13 @@ func NewAccount() *config.Account {
 			Username: fmt.Sprintf("test-%v@example.com", r1.Intn(10000)),
 			Password: "test",
 			InputMailbox: &config.InputMailbox{
-				Name: "INBOX",
-				SearchCriteria:"UNSEEN UNFLAGGED",
+				Name:           "INBOX",
+				SearchCriteria: "UNSEEN UNFLAGGED",
 			},
-			IMAPS: false,
-			Starttls: &starttls,
-			TLSVerify: &tlsverify,
+			IMAPS:         false,
+			Starttls:      &starttls,
+			TLSVerify:     &tlsverify,
+			TLSCACertFile: "/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/ca.pem",
 		},
 	}
 

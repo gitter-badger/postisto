@@ -21,7 +21,7 @@ type Config struct {
 
 type Account struct {
 	Connection AccountConnection `yaml:"connection"`
-	Filters map[string]struct {
+	Filters    map[string]struct {
 		Commands []map[string]interface{} `yaml:"commands"`
 		Rules    []map[string]interface{} `yaml:"rules"`
 	} `yaml:"filters"`
@@ -35,10 +35,11 @@ type AccountConnection struct {
 	Password     string        `yaml:"password"`
 	InputMailbox *InputMailbox `yaml:"input_mailbox"`
 	//SortMailbox string `yaml:"sort_mailbox"`
-	IMAPS     bool           `yaml:"imaps"`
-	Starttls  *bool          `yaml:"starttls"`
-	TLSVerify *bool          `yaml:"tlsverify"`
-	Client    *client.Client //TODO custom type?
+	IMAPS         bool           `yaml:"imaps"`
+	Starttls      *bool          `yaml:"starttls"`
+	TLSVerify     *bool          `yaml:"tlsverify"`
+	TLSCACertFile string         `yaml:"cafile"`
+	Client        *client.Client //TODO custom type?
 }
 
 type InputMailbox struct {

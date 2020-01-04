@@ -64,7 +64,6 @@ func (cfg Config) Load(configPath string) (Config, error) {
 	if stat.IsDir() {
 		err := filepath.Walk(configPath,
 			func(path string, info os.FileInfo, err error) error {
-				//log.Println(path)
 				if err != nil {
 					return err
 				}

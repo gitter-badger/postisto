@@ -10,6 +10,22 @@ import (
 	"testing"
 )
 
+func TestUploadMails(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	acc := integration.NewStandardAccount(t)
+
+	defer func() {
+		assert.Nil(conn.Disconnect(acc))
+	}()
+
+	require.Nil(conn.Connect(acc))
+
+	assert.EqualError(UploadMails(acc, "does-not-exit.txt", acc.Connection.InputMailbox.Mailbox, []string{}), "open does-not-exit.txt: no such file or directory")
+	assert.Error(UploadMails(acc, "../../test/data/mails/empty-mail.txt", acc.Connection.InputMailbox.Mailbox, []string{}))
+}
+
 func TestSearchAndFetchMails(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -35,6 +51,13 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	// Load newly uploaded mails
 	var fetchedMails []*imap.Message
+
+	acc.Connection.InputMailbox.Mailbox = "wrong"
+	fetchedMails, err = SearchAndFetchMails(acc)
+	assert.Equal(0, len(fetchedMails))
+	assert.Nil(err)
+	acc.Connection.InputMailbox.Mailbox = "INBOX"
+
 	fetchedMails, err = SearchAndFetchMails(acc)
 	assert.Equal(10, len(fetchedMails))
 	assert.Nil(err)

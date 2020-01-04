@@ -30,7 +30,7 @@ func NewAccount() *config.Account {
 			IMAPS:         false,
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
-			TLSCACertFile: "/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/ca.pem",
+			TLSCACertFile: "../../test/data/ca.pem",
 		},
 	}
 

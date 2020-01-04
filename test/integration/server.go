@@ -8,13 +8,14 @@ import (
 	"time"
 )
 
-func NewAccount(port int, starttls bool, imaps bool, tlsverify bool, cacertfile string) *config.Account {
+func NewAccount(port int, starttls bool, imaps bool, tlsverify bool, cacertfile *string) *config.Account {
 
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 
-	if cacertfile == "" {
-		cacertfile = "../../test/data/certs/ca.pem"
+	if cacertfile == nil {
+		defaultcacert := "../../test/data/certs/ca.pem"
+		cacertfile = &defaultcacert
 	}
 
 	acc := config.Account{
@@ -31,7 +32,7 @@ func NewAccount(port int, starttls bool, imaps bool, tlsverify bool, cacertfile 
 			IMAPS:         imaps,
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
-			TLSCACertFile: cacertfile,
+			TLSCACertFile: *cacertfile,
 		},
 	}
 

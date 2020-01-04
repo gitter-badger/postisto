@@ -38,7 +38,7 @@ type AccountConnection struct {
 	IMAPS         bool           `yaml:"imaps"`
 	Starttls      *bool          `yaml:"starttls"`
 	TLSVerify     *bool          `yaml:"tlsverify"`
-	TLSCACertFile string         `yaml:"cafile"`
+	TLSCACertFile string         `yaml:"cacertfile"`
 	Client        *client.Client //TODO custom type?
 }
 

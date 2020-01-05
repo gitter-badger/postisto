@@ -6,6 +6,7 @@ import (
 	"github.com/arnisoph/postisto/test/integration"
 	"github.com/emersion/go-imap"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -48,20 +49,20 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	// Test searching only
 	uids, err := SearchMails(acc.Connection.Client, "INBOX", nil, nil)
-	require.Equal([]uint32{1, 2, 3}, uids)
 	require.Nil(err)
+	require.Equal([]uint32{1, 2, 3}, uids)
 
 	// Load newly uploaded mails
 	var fetchedMails []*imap.Message
 
 	// Search in non-existing mailbox
 	fetchedMails, err = SearchAndFetchMails(acc.Connection.Client, "non-existent", nil, nil)
+	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: non-existent"))
 	require.Equal(0, len(fetchedMails))
-	require.Nil(err)
 
 	fetchedMails, err = SearchAndFetchMails(acc.Connection.Client, "INBOX", nil, nil)
-	require.Equal(numTestmails, len(fetchedMails))
 	require.Nil(err)
+	require.Equal(numTestmails, len(fetchedMails))
 }
 
 func TestSetMailFlags(t *testing.T) {

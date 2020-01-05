@@ -38,19 +38,12 @@ func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, witho
 	}
 
 	// Define search criteria
-	var anyCriteriaSet bool
 	criteria := imap.NewSearchCriteria()
 	if len(withFlags) > 0 {
 		criteria.WithFlags = withFlags
-		anyCriteriaSet = true
 	}
 	if len(withoutFlags) > 0 {
 		criteria.WithoutFlags = withoutFlags
-		anyCriteriaSet = true
-	}
-
-	if !anyCriteriaSet {
-		criteria.All = true
 	}
 
 	// Actually search
@@ -97,7 +90,7 @@ func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []strin
 	uids, err := SearchMails(c, mailbox, withFlags, withoutFlags)
 
 	if err != nil || len(uids) == 0 {
-		return nil, nil
+		return nil, err
 	}
 
 	return FetchMails(c, mailbox, uids)

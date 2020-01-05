@@ -62,3 +62,36 @@ func TestSearchAndFetchMails(t *testing.T) {
 	assert.Equal(10, len(fetchedMails))
 	assert.Nil(err)
 }
+
+func TestSetMailFlags(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	acc := integration.NewStandardAccount(t)
+
+	defer func() {
+		assert.Nil(conn.Disconnect(acc))
+	}()
+
+	require.Nil(conn.Connect(acc))
+
+	for i := 1; i <= 10; i++ {
+		require.Nil(UploadMails(acc, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.Connection.InputMailbox.Mailbox, []string{}))
+	}
+
+	// ACTUAL TESTS BELOW
+
+	// Load newly uploaded mails
+	fetchedMails, err := SearchAndFetchMails(acc)
+	assert.Equal(10, len(fetchedMails))
+	assert.Nil(err)
+
+	// Set custom flags
+	for _, fetchedMail := range fetchedMails {
+		assert.Nil(SetMailFlags(acc, acc.Connection.InputMailbox.Mailbox, fetchedMail.Uid, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}))
+
+		flags, err := GetMailFlags(acc, acc.Connection.InputMailbox.Mailbox, fetchedMail.Uid)
+		assert.Nil(err)
+		assert.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", imap.FlaggedFlag}, flags)
+	}
+}

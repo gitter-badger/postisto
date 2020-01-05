@@ -22,7 +22,7 @@ func (err *BadCommandTargetError) Error() string {
 	return fmt.Sprintf("Bad command target %q", err.targetName)
 }
 
-func ApplyCommand(acc *config.Account, mailbox string, uid uint32, cmds []config.Command) error {
+func ApplyCommand(acc *config.Account, from string, to string, uid uint32, cmds []config.Command) error {
 	var err error
 
 	for _, cmd := range cmds {
@@ -33,12 +33,24 @@ func ApplyCommand(acc *config.Account, mailbox string, uid uint32, cmds []config
 				return &BadCommandTargetError{targetName: cmd.Target}
 			}
 
-			if err := mail.MoveMail(acc, uid, cmd.Target); err != nil {
+			if err := mail.MoveMail(acc, uid, from, cmd.Target); err != nil {
 				return err
 			}
 
 			if len(cmd.AddFlags) > 0 {
-				if err := mail.SetMailFlags(acc, mailbox, uid, "+FLAGS", cmd.AddFlags); err != nil {
+				if err := mail.SetMailFlags(acc, to, uid, "+FLAGS", cmd.AddFlags); err != nil {
+					return err
+				}
+			}
+
+			if len(cmd.OverrideFlags) > 0 {
+				if err := mail.SetMailFlags(acc, to, uid, "FLAGS", cmd.OverrideFlags); err != nil {
+					return err
+				}
+			}
+
+			if len(cmd.DeleteFlags) > 0 {
+				if err := mail.SetMailFlags(acc, to, uid, "-FLAGS", cmd.DeleteFlags); err != nil {
 					return err
 				}
 			}

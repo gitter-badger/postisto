@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	imapClient "github.com/emersion/go-imap/client"
 	"github.com/goccy/go-yaml"
 	"github.com/imdario/mergo"
@@ -50,7 +49,8 @@ type Command struct {
 	Type          string        `yaml:"type"`
 	Target        string        `yaml:"target"`
 	AddFlags      []interface{} `yaml:"add_flags,flow"`
-	OverrideFlags []string      `yaml:"set_flags,flow"`
+	OverrideFlags []interface{}      `yaml:"set_flags,flow"`
+	DeleteFlags      []interface{} `yaml:"delete_flags,flow"`
 }
 
 type Rule []map[string]interface{}
@@ -98,7 +98,7 @@ func (cfg Config) Load(configPath string) (Config, error) {
 		if err != nil {
 			return cfg, err
 		}
-		fmt.Println("unmarsh", file)
+
 		err = yaml.Unmarshal(yamlFile, &fileCfg)
 
 		if err != nil {

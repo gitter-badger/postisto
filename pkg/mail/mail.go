@@ -154,6 +154,33 @@ func SetMailFlags(acc *config.Account, mailbox string, uid uint32, flagOp string
 	return acc.Connection.Client.UidStore(&seqset, item, flags, nil)
 }
 
+func GetMailFlags(acc *config.Account, mailbox string, uid uint32) ([]string, error) {
+	var flags []string
+	var err error
+
+	if _, err := acc.Connection.Client.Select(mailbox, false); err != nil {
+		return flags, err
+	}
+
+	seqset := imap.SeqSet{}
+	seqset.AddNum(uid)
+
+	items := []imap.FetchItem{imap.FetchFlags}
+
+	imapMessages := make(chan *imap.Message, 10)
+	done := make(chan error, 1)
+	go func() {
+		err := acc.Connection.Client.UidFetch(&seqset, items, imapMessages)
+		done <- err
+	}()
+
+	for msg := range imapMessages {
+		flags = msg.Flags
+	}
+
+	return flags, err
+}
+
 // List mailboxes
 //mailboxes := make(chan *imap.MailboxInfo, 11)
 //done := make(chan error, 1)
@@ -198,25 +225,30 @@ func CreateMailbox(acc *config.Account, name string) error {
 //	return err
 //}
 
-func MoveMail(acc *config.Account, uid uint32, mailbox string) error {
+func MoveMail(acc *config.Account, uid uint32, from string, to string) error {
 	var err error
 	seqset := imap.SeqSet{}
 	seqset.AddNum(uid)
 
+	if _, err := acc.Connection.Client.Select(from, false); err != nil {
+		return err
+	}
+
 	moveClient := move.NewClient(acc.Connection.Client)
 
-	err = moveClient.UidMove(&seqset, mailbox)
+	err = moveClient.UidMove(&seqset, to)
 
-	if err != nil && strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) {
-		// MOVE failed because the target mailbox did not exist. Create it and try again.
-		if err = CreateMailbox(acc, mailbox); err != nil {
+	if err != nil && strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", to)) {
+		// MOVE failed because the target to did not exist. Create it and try again.
+		if err = CreateMailbox(acc, to); err != nil {
 			return err
 		}
 
-		if err = moveClient.UidMove(&seqset, mailbox); err != nil {
+		if err = moveClient.UidMove(&seqset, to); err != nil {
 			return err
 		}
 	}
 
 	return err
 }
+

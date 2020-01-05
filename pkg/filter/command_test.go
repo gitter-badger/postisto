@@ -15,7 +15,7 @@ func TestApplyCommands(t *testing.T) {
 	require := require.New(t)
 
 	acc := integration.NewStandardAccount(t)
-	const numTestmails = 8
+	const numTestmails = 2
 
 	defer func() {
 		require.Nil(conn.Disconnect(acc.Connection.Client))
@@ -26,14 +26,14 @@ func TestApplyCommands(t *testing.T) {
 	require.Nil(err)
 
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(mail.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.Connection.InputMailbox.Mailbox, []string{}))
+		require.Nil(mail.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := mail.SearchAndFetchMails(acc.Connection.Client, acc.Connection.InputMailbox.Mailbox, nil, nil)
-	require.Equal(numTestmails, len(fetchedMails))
+	testMails, err := mail.SearchAndFetchMails(acc.Connection.Client, "INBOX", nil, nil)
+	require.Equal(numTestmails, len(testMails))
 	require.Nil(err)
 
 	// Apply commands
@@ -42,31 +42,41 @@ func TestApplyCommands(t *testing.T) {
 	cmds["add_flags"] = []interface{}{"add_foobar", "Bar", "$MailFlagBit0", imap.FlaggedFlag}
 	cmds["remove_flags"] = []interface{}{"set_foobar", "bar"}
 
-	var uids []uint32
-	for i, fetchedMail := range fetchedMails {
-		if i > 2 {
-			cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", imap.FlaggedFlag}
-		}
-		uids = append(uids, fetchedMail.Uid)
-		require.Nil(RunCommands(acc.Connection.Client, acc.Connection.InputMailbox.Mailbox, "MyTarget", fetchedMail.Uid, cmds))
-
-		flags, err := mail.GetMailFlags(acc.Connection.Client, "MyTarget", fetchedMail.Uid)
-		require.Nil(err)
-		if i <= 2 {
-			require.ElementsMatch([]interface{}{"add_foobar", "$mailflagbit0", imap.FlaggedFlag}, flags)
-		} else {
-			require.ElementsMatch([]interface{}{"42", "bar", "oo", "$mailflagbit0", imap.FlaggedFlag}, flags)
-		}
-	}
-
-	movedMails, err := mail.FetchMails(acc.Connection.Client, "INBOX", uids)
+	// Mail 1
+	require.Nil(RunCommands(acc.Connection.Client, "INBOX", "MyTarget", testMails[0].Uid, cmds))
+	flags, err := mail.GetMailFlags(acc.Connection.Client, "MyTarget", testMails[0].Uid)
 	require.Nil(err)
-	require.EqualValues(0, len(movedMails))
+	require.ElementsMatch([]string{"add_foobar", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
-	movedMails, err = mail.FetchMails(acc.Connection.Client, "MyTarget", uids)
+	// Mail 2: replace all flags
+	cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", imap.FlaggedFlag}
+	require.Nil(RunCommands(acc.Connection.Client, "INBOX", "MyTarget", testMails[1].Uid, cmds))
+	flags, err = mail.GetMailFlags(acc.Connection.Client, "MyTarget", testMails[1].Uid)
 	require.Nil(err)
-	require.EqualValues(numTestmails, len(movedMails))
+	require.ElementsMatch([]string{"42", "bar", "oo", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
-	//oldMails, err := mail.Sea
+	// Upload fresh mail
+	require.Nil(mail.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", 1), "INBOX", []string{}))
 
+	// Load newly uploaded mail
+	testMails, err = mail.SearchAndFetchMails(acc.Connection.Client, "INBOX", nil, nil)
+	require.Equal(1, len(testMails))
+	require.Nil(err)
+
+	// Apply cmd to this new mail 3 too
+	cmds["replace_all_flags"] = []interface{}{"completly", "different"}
+	require.Nil(RunCommands(acc.Connection.Client, "INBOX", "MyTarget", testMails[0].Uid, cmds))
+	flags, err = mail.GetMailFlags(acc.Connection.Client, "MyTarget", testMails[0].Uid)
+	require.Nil(err)
+	require.ElementsMatch([]string{"completly", "different"}, flags)
+
+	// Verify resulting INBOX
+	uids, err := mail.SearchMails(acc.Connection.Client, "INBOX", nil, nil)
+	require.Nil(err)
+	require.Empty(uids)
+
+	// Verify resulting MyTarget
+	uids, err = mail.SearchMails(acc.Connection.Client, "MyTarget", nil, nil)
+	require.Nil(err)
+	require.ElementsMatch([]uint32{1, 2, 3}, uids)
 }

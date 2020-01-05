@@ -38,18 +38,28 @@ func TestConnect(t *testing.T) {
 	// connect to IMAP server
 	accs["starttls"].Connection.Client, err = Connect(accs["starttls"].Connection)
 	require.Nil(err)
+
+	accs["starttls"].Connection.Password = "wrongpass"
+	accs["starttls"].Connection.Client, err = Connect(accs["starttls"].Connection)
+	require.EqualError(err, "Authentication failed.")
+
 	accs["starttls_wrongport"].Connection.Client, err = Connect(accs["starttls_wrongport"].Connection)
 	require.Error(err)
+
 	accs["imaps"].Connection.Client, err = Connect(accs["imaps"].Connection)
 	require.Nil(err)
+
 	accs["imaps_wrongport"].Connection.Client, err = Connect(accs["imaps_wrongport"].Connection)
 	require.Error(err)
+
 	if os.Getenv("USER") != "ab" {
 		_, err = Connect(accs["nocacert"].Connection)
 		require.EqualError(err, "x509: certificate signed by unknown authority")
 	}
+
 	accs["badcacert"].Connection.Client, err = Connect(accs["badcacert"].Connection)
 	require.EqualError(err, "x509: certificate signed by unknown authority")
+
 	accs["badcacertpath"].Connection.Client, err = Connect(accs["badcacertpath"].Connection)
 	require.EqualError(err, "open ca-doesnotexist.pem: no such file or directory")
 }

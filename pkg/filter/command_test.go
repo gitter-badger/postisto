@@ -59,7 +59,11 @@ func TestApplyCommands(t *testing.T) {
 		}
 	}
 
-	movedMails, err := mail.FetchMails(acc.Connection.Client, "MyTarget", uids)
+	movedMails, err := mail.FetchMails(acc.Connection.Client, "INBOX", uids)
+	require.Nil(err)
+	require.EqualValues(0, len(movedMails))
+
+	movedMails, err = mail.FetchMails(acc.Connection.Client, "MyTarget", uids)
 	require.Nil(err)
 	require.EqualValues(numTestmails, len(movedMails))
 

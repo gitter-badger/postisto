@@ -113,3 +113,50 @@ func TestSetMailFlags(t *testing.T) {
 		require.ElementsMatch([]string{"123", "forty-two"}, flags)
 	}
 }
+
+func TestMoveMails(t *testing.T) {
+	require := require.New(t)
+
+	acc := integration.NewStandardAccount(t)
+	const numTestmails = 5
+
+	defer func() {
+		require.Nil(conn.Disconnect(acc.Connection.Client))
+	}()
+
+	var err error
+	acc.Connection.Client, err = conn.Connect(acc.Connection)
+	require.Nil(err)
+
+	for i := 1; i <= numTestmails; i++ {
+		require.Nil(UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.Connection.InputMailbox.Mailbox, []string{}))
+	}
+
+	// ACTUAL TESTS BELOW
+
+	// Load newly uploaded mails
+	fetchedMails, err := SearchAndFetchMails(acc.Connection.Client, acc.Connection.InputMailbox.Mailbox, nil, nil)
+	require.Equal(numTestmails, len(fetchedMails))
+	require.Nil(err)
+
+	// Move mails arround
+	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[0].Uid}, "INBOX", "MyTarget42")
+	require.Nil(err)
+
+	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[1].Uid}, "INBOX", "INBOX")
+	require.Nil(err)
+
+	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[2].Uid}, "INBOX", "MyTarget!!!")
+	require.Nil(err)
+
+	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[3].Uid}, "wrong-source", "MyTarget!!!")
+	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: wrong-source"))
+
+	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[4].Uid}, "INBOX", "ütf-8 & 梦龙周")
+	require.Nil(err)
+
+	var uids []uint32
+	uids, err = SearchMails(acc.Connection.Client, "INBOX", nil, nil)
+	require.Nil(err)
+	require.Equal(2, len(uids))
+}

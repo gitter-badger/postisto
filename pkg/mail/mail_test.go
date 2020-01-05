@@ -2,9 +2,9 @@ package mail
 
 import (
 	"fmt"
-	"github.com/emersion/go-imap"
 	"github.com/arnisoph/postisto/pkg/conn"
 	"github.com/arnisoph/postisto/test/integration"
+	"github.com/emersion/go-imap"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

@@ -1,9 +1,9 @@
 package filter
 
 import (
-	imapClient "github.com/emersion/go-imap/client"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/mail"
+	imapClient "github.com/emersion/go-imap/client"
 )
 
 //type UnknownCommandTypeError struct {

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/emersion/go-imap"
-	imapClient "github.com/emersion/go-imap/client"
 	imapMove "github.com/emersion/go-imap-move"
+	imapClient "github.com/emersion/go-imap/client"
 	"os"
 	"strings"
 

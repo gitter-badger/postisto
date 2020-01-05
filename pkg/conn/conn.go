@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	imapClient "github.com/emersion/go-imap/client"
 	"github.com/arnisoph/postisto/pkg/config"
+	imapClient "github.com/emersion/go-imap/client"
 
 	"io/ioutil"
 	"os"

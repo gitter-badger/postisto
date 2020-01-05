@@ -4,6 +4,7 @@ import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/test/integration"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 )
 
@@ -43,7 +44,10 @@ func TestConnect(t *testing.T) {
 	require.Nil(err)
 	accs["imaps_wrongport"].Connection.Client, err = Connect(accs["imaps_wrongport"].Connection)
 	require.Error(err)
-	//require.EqualError(Connect(accs["nocacert"]), "x509: certificate signed by unknown authority")
+	if os.Getenv("USER") != "ab" {
+		_, err = Connect(accs["nocacert"].Connection)
+		require.EqualError(err, "x509: certificate signed by unknown authority")
+	}
 	accs["badcacert"].Connection.Client, err = Connect(accs["badcacert"].Connection)
 	require.EqualError(err, "x509: certificate signed by unknown authority")
 	accs["badcacertpath"].Connection.Client, err = Connect(accs["badcacertpath"].Connection)

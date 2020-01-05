@@ -45,7 +45,6 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 	err = newIMAPUser(&acc, redisClient)
 	require.Nil(err)
 
-	fmt.Println("=============>", acc.Connection.Username)
 	return &acc
 }
 

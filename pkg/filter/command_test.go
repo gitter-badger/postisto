@@ -39,18 +39,24 @@ func TestApplyCommands(t *testing.T) {
 	// Apply commands
 	cmds := make(config.Commands)
 	cmds["move"] = "MyTarget"
-	//cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", imap.FlaggedFlag}
 	cmds["add_flags"] = []interface{}{"add_foobar", "Bar", "$MailFlagBit0", imap.FlaggedFlag}
 	cmds["remove_flags"] = []interface{}{"set_foobar", "bar"}
 
 	var uids []uint32
-	for _, fetchedMail := range fetchedMails {
+	for i, fetchedMail := range fetchedMails {
+		if i > 2 {
+			cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", imap.FlaggedFlag}
+		}
 		uids = append(uids, fetchedMail.Uid)
 		require.Nil(RunCommands(acc.Connection.Client, acc.Connection.InputMailbox.Mailbox, "MyTarget", fetchedMail.Uid, cmds))
 
 		flags, err := mail.GetMailFlags(acc.Connection.Client, "MyTarget", fetchedMail.Uid)
 		require.Nil(err)
-		require.ElementsMatch([]interface{}{"add_foobar", "$mailflagbit0", imap.FlaggedFlag}, flags)
+		if i <= 2 {
+			require.ElementsMatch([]interface{}{"add_foobar", "$mailflagbit0", imap.FlaggedFlag}, flags)
+		} else {
+			require.ElementsMatch([]interface{}{"42", "bar", "oo", "$mailflagbit0", imap.FlaggedFlag}, flags)
+		}
 	}
 
 	movedMails, err := mail.FetchMails(acc.Connection.Client, "MyTarget", uids)

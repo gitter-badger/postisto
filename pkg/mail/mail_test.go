@@ -69,7 +69,7 @@ func TestSetMailFlags(t *testing.T) {
 	require := require.New(t)
 
 	acc := integration.NewStandardAccount(t)
-	const numTestmails = 6
+	const numTestmails = 1
 
 	defer func() {
 		require.Nil(conn.Disconnect(acc.Connection.Client))
@@ -90,28 +90,30 @@ func TestSetMailFlags(t *testing.T) {
 	require.Nil(err)
 	require.Equal(numTestmails, len(fetchedMails))
 
+	// Test failed GetMailFlags (because of non-existing mailbox)
+	_, err = GetMailFlags(acc.Connection.Client, "non-existing-mailbox", 0)
+	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: non-existing-mailbox"))
+
 	// Set custom flags
-	for _, fetchedMail := range fetchedMails {
-		var flags []string
+	var flags []string
 
-		// Add flags
-		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}, false))
-		flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMail.Uid)
-		require.Nil(err)
-		require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", imap.FlaggedFlag}, flags)
+	// Add flags
+	require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMails[0].Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}, false))
+	flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[0].Uid)
+	require.Nil(err)
+	require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
-		// Remove flags
-		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
-		flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMail.Uid)
-		require.Nil(err)
-		require.ElementsMatch([]string{"$mailflagbit0", imap.FlaggedFlag}, flags)
+	// Remove flags
+	require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMails[0].Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
+	flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[0].Uid)
+	require.Nil(err)
+	require.ElementsMatch([]string{"$mailflagbit0", imap.FlaggedFlag}, flags)
 
-		// Replace all flags with new list
-		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "FLAGS", []interface{}{"123", "forty-two"}, false))
-		flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMail.Uid)
-		require.Nil(err)
-		require.ElementsMatch([]string{"123", "forty-two"}, flags)
-	}
+	// Replace all flags with new list
+	require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMails[0].Uid}, "FLAGS", []interface{}{"123", "forty-two"}, false))
+	flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[0].Uid)
+	require.Nil(err)
+	require.ElementsMatch([]string{"123", "forty-two"}, flags)
 }
 
 func TestMoveMails(t *testing.T) {

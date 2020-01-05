@@ -33,19 +33,19 @@ func RunCommands(c *imapClient.Client, from string, to string, uid uint32, cmds 
 	}
 
 	if cmds["add_flags"] != nil {
-		if err := mail.SetMailFlags(c, to, uids, "+FLAGS", cmds["add_flags"].([]interface{})); err != nil {
+		if err := mail.SetMailFlags(c, to, uids, "+FLAGS", cmds["add_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}
 
 	if cmds["remove_flags"] != nil {
-		if err := mail.SetMailFlags(c, to, uids, "-FLAGS", cmds["remove_flags"].([]interface{})); err != nil {
+		if err := mail.SetMailFlags(c, to, uids, "-FLAGS", cmds["remove_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}
 
 	if cmds["replace_all_flags"] != nil {
-		if err := mail.SetMailFlags(c, to, uids, "FLAGS", cmds["replace_all_flags"].([]interface{})); err != nil {
+		if err := mail.SetMailFlags(c, to, uids, "FLAGS", cmds["replace_all_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}

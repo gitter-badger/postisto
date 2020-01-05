@@ -95,19 +95,19 @@ func TestSetMailFlags(t *testing.T) {
 		var flags []string
 
 		// Add flags
-		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}))
+		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}, false))
 		flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMail.Uid)
 		require.Nil(err)
 		require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
 		// Remove flags
-		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}))
+		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
 		flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMail.Uid)
 		require.Nil(err)
 		require.ElementsMatch([]string{"$mailflagbit0", imap.FlaggedFlag}, flags)
 
 		// Replace all flags with new list
-		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "FLAGS", []interface{}{"123", "forty-two"}))
+		require.Nil(SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMail.Uid}, "FLAGS", []interface{}{"123", "forty-two"}, false))
 		flags, err = GetMailFlags(acc.Connection.Client, "INBOX", fetchedMail.Uid)
 		require.Nil(err)
 		require.ElementsMatch([]string{"123", "forty-two"}, flags)
@@ -158,5 +158,48 @@ func TestMoveMails(t *testing.T) {
 	var uids []uint32
 	uids, err = SearchMails(acc.Connection.Client, "INBOX", nil, nil)
 	require.Nil(err)
-	require.Equal(2, len(uids))
+	require.EqualValues([]uint32{4, 6}, uids) // UID 1 moved, UID 2 became 6, UID 3 moved, UID 4 kept untouched, UID 5 moved
+}
+
+func TestDeleteMails(t *testing.T) {
+	require := require.New(t)
+
+	acc := integration.NewStandardAccount(t)
+	const numTestmails = 3
+
+	defer func() {
+		require.Nil(conn.Disconnect(acc.Connection.Client))
+	}()
+
+	var err error
+	acc.Connection.Client, err = conn.Connect(acc.Connection)
+	require.Nil(err)
+
+	for i := 1; i <= numTestmails; i++ {
+		require.Nil(UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.Connection.InputMailbox.Mailbox, []string{}))
+	}
+
+	// ACTUAL TESTS BELOW
+
+	// Load newly uploaded mails
+	fetchedMails, err := SearchAndFetchMails(acc.Connection.Client, acc.Connection.InputMailbox.Mailbox, nil, nil)
+	require.Equal(numTestmails, len(fetchedMails))
+	require.Nil(err)
+
+	// Delete one mail
+	err = DeleteMails(acc.Connection.Client, "does-not-exist", []uint32{fetchedMails[0].Uid}, true) // mailbox doesn't exist, can't be deleted
+	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: does-not-exist"))
+
+	err = DeleteMails(acc.Connection.Client, "INBOX", []uint32{fetchedMails[1].Uid}, false) // not moved yet, flag, don't expunge yet
+	require.Nil(err)
+	flags, err := GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[1].Uid)
+	require.Nil(err)
+	require.EqualValues([]string{imap.DeletedFlag}, flags)
+	err = DeleteMails(acc.Connection.Client, "INBOX", []uint32{fetchedMails[1].Uid}, true) // not moved yet, flag & expunge
+	require.Nil(err)
+
+	var uids []uint32
+	uids, err = SearchMails(acc.Connection.Client, "INBOX", nil, nil)
+	require.Nil(err)
+	require.EqualValues([]uint32{1, 3}, uids) // UID 1 kept untouched, UID 2 deleted, UID 3 kept untouched
 }

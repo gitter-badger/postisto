@@ -158,11 +158,11 @@ func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []strin
 
 }
 
-func DeleteMails(c *imapClient.Client, mailbox string, uids []uint32) error {
-	return SetMailFlags(c, mailbox, uids, "+FLAGS", []interface{}{imap.DeletedFlag})
+func DeleteMails(c *imapClient.Client, mailbox string, uids []uint32, expunge bool) error {
+	return SetMailFlags(c, mailbox, uids, "+FLAGS", []interface{}{imap.DeletedFlag}, expunge)
 }
 
-func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp string, flags []interface{}) error {
+func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp string, flags []interface{}, expunge bool) error {
 
 	if _, err := c.Select(mailbox, false); err != nil {
 		return err
@@ -175,7 +175,15 @@ func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp st
 
 	item := imap.FormatFlagsOp(imap.FlagsOp(flagOp), true)
 
-	return c.UidStore(&seqset, item, flags, nil)
+	if err := c.UidStore(&seqset, item, flags, nil); err != nil {
+		return err
+	}
+
+	if expunge {
+		return c.Expunge(nil) //TODO set & verify ch to check list of expunged mails
+	}
+
+	return nil
 }
 
 func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, error) {

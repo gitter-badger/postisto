@@ -41,18 +41,10 @@ type AccountConnection struct {
 }
 
 type Filter struct {
-	Commands []Command `yaml:"commands,flow"`
+	Commands Commands `yaml:"commands,flow"`
 	//Rules    []Rule    `yaml:"rules"`
 }
-
-type Command struct {
-	Type          string        `yaml:"type"`
-	Target        string        `yaml:"target"`
-	AddFlags      []interface{} `yaml:"add_flags,flow"`
-	OverrideFlags []interface{}      `yaml:"set_flags,flow"`
-	DeleteFlags      []interface{} `yaml:"delete_flags,flow"`
-}
-
+type Commands map[string]interface{}
 type Rule []map[string]interface{}
 
 type InputMailbox struct {

@@ -5,16 +5,14 @@ accounts:
     filters:
       simple:
         commands:
-          - type: move
-            target: MailFilterTest-Simple
+          move: MailFilterTest-Simple
         rules:
           - and:
             - from:
               - '@youth4work.com'
       test_and:
         commands:
-          - type: move
-            target: MailFilterTest-TestAND
+          move: MailFilterTest-TestAND
         rules:
           - and:
             - from:
@@ -23,8 +21,7 @@ accounts:
               - cyberzonec.in
       test_regex:
         commands:
-          - type: move
-            target: MailFilterTest-TestRegex
+          move: MailFilterTest-TestRegex
         rules:
           - and:
             - from:
@@ -35,8 +32,7 @@ accounts:
               - ^(?:text/html|text/plain).*$
       tes_misc:
         commands:
-          - type: move
-            target: MailFilterTest-TestMisc
+          move: MailFilterTest-TestMisc
         rules:
           - or:
             - subject:
@@ -51,8 +47,7 @@ accounts:
               - 10.52.3.166
       test_unicode_from:
         commands:
-          - type: move
-            target: MailFilterTest-TestUnicodeFrom
+          move: MailFilterTest-TestUnicodeFrom
         rules:
           - and:
             - from:
@@ -62,8 +57,7 @@ accounts:
                 - '梦龙周'
       test_unicode_subject:
         commands:
-          - type: move
-            target: MailFilterTest-TestUnicodeSubject
+          move: MailFilterTest-TestUnicodeSubject
         rules:
           - and:
             - subject:
@@ -74,8 +68,7 @@ accounts:
               - '^.*ö.*$'
       test_mail16:
         commands:
-          - type: move
-            target: MailFilterTest-16
+          move: MailFilterTest-16
         rules:
           - and:
             - X-Custom-Mail-Id:
@@ -84,8 +77,7 @@ accounts:
               - CSMemoFrom
       test_mail17:
         commands:
-          - type: move
-            target: MailFilterTest-17
+          move: MailFilterTest-17
         rules:
           - and:
             - X-Custom-Mail-Id:

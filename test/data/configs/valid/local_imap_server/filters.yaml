@@ -5,10 +5,9 @@ accounts:
     filters:
       shops:
         commands:
-          - type: move
-            target: Shops
-            add_flags:
-              - '\Flagged'
+          move: Shops
+          add_flags:
+            - '\Flagged'
         rules:
           - or:
             - from:

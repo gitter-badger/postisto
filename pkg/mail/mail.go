@@ -54,7 +54,7 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	}
 
 	seqset := imap.SeqSet{}
-	for _, uid := range uids {
+	for _, uid:= range uids {
 		seqset.AddNum(uid)
 	}
 
@@ -65,73 +65,76 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	imapMessages := make(chan *imap.Message, 10)
 	done := make(chan error, 1)
 	go func() {
-		err := acc.Connection.Client.Fetch(&seqset, items, imapMessages)
-		done <- err
+		done <- acc.Connection.Client.UidFetch(&seqset, items, imapMessages)
 	}()
 
-	for msg := range imapMessages {
-		fetchedMails = append(fetchedMails, msg)
+	if err = <-done; err != nil {
+		return fetchedMails, err
+	}
 
-		/*
-			msgBody := msg.GetBody(&section)
+	for imapMessage := range imapMessages {
+		fetchedMails = append(fetchedMails, imapMessage)
+	}
+	/*
+		msgBody := msg.GetBody(&section)
 
-			if msgBody == nil {
-				log.Fatal("Server didn't returned message body")
-				return fetchedMails, nil
-			}
+		if msgBody == nil {
+			log.Fatal("Server didn't returned message body")
+			return fetchedMails, nil
+		}
 
-			m, err := mail.CreateReader(msgBody)
-			if err != nil {
+		m, err := mail.CreateReader(msgBody)
+		if err != nil {
+			log.Fatal(err)
+		}
+	*/
+
+	//fields := m.Header.FieldsByKey("received")
+	//for {
+	//	next := fields.Next()
+	//	if !next { break }
+	//	log.Println(fields.Key(), " => ", fields.Value())
+	//
+	//}
+
+	/*
+		date, _ := m.Header.Date()
+		sub, _ := m.Header.Subject()
+		from, _ := m.Header.AddressList("from")
+
+
+		log.Println(date.Local(), sub, from[0].Name, )
+	*/
+
+	/*
+		// Process each message's part
+		for {
+			p, err := m.NextPart()
+			if err == io.EOF {
+				break
+			} else if err != nil {
 				log.Fatal(err)
 			}
-		*/
 
-		//fields := m.Header.FieldsByKey("received")
-		//for {
-		//	next := fields.Next()
-		//	if !next { break }
-		//	log.Println(fields.Key(), " => ", fields.Value())
-		//
-		//}
-
-		/*
-			date, _ := m.Header.Date()
-			sub, _ := m.Header.Subject()
-			from, _ := m.Header.AddressList("from")
-
-
-			log.Println(date.Local(), sub, from[0].Name, )
-		*/
-
-		/*
-			// Process each message's part
-			for {
-				p, err := m.NextPart()
-				if err == io.EOF {
-					break
-				} else if err != nil {
-					log.Fatal(err)
-				}
-
-				switch h := p.Header.(type) {
-				case *mail.InlineHeader:
-					// This is the message's text (can be plain-text or HTML)
-					b, _ := ioutil.ReadAll(p.Body)
-					log.Printf("Got text: %v", string(b))
-				case *mail.AttachmentHeader:
-					// This is an attachment
-					filename, _ := h.Filename()
-					log.Printf("Got attachment: %v", filename)
-				}
-
+			switch h := p.Header.(type) {
+			case *mail.InlineHeader:
+				// This is the message's text (can be plain-text or HTML)
+				b, _ := ioutil.ReadAll(p.Body)
+				log.Printf("Got text: %v", string(b))
+			case *mail.AttachmentHeader:
+				// This is an attachment
+				filename, _ := h.Filename()
+				log.Printf("Got attachment: %v", filename)
 			}
-		*/
 
-		//log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].MailboxName, msg)
-		//raw := msg.GetBody(section)
-		//m, _ := mail.ReadMessage(raw)
-		//log.Println(m.Header.Get("Received"))
-	}
+		}
+	*/
+
+	//log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].MailboxName, msg)
+	//raw := msg.GetBody(section)
+	//m, _ := mail.ReadMessage(raw)
+	//log.Println(m.Header.Get("Received"))
+	//	}
 
 	return fetchedMails, err
 }
@@ -170,9 +173,12 @@ func GetMailFlags(acc *config.Account, mailbox string, uid uint32) ([]string, er
 	imapMessages := make(chan *imap.Message, 10)
 	done := make(chan error, 1)
 	go func() {
-		err := acc.Connection.Client.UidFetch(&seqset, items, imapMessages)
-		done <- err
+		done <- acc.Connection.Client.UidFetch(&seqset, items, imapMessages)
 	}()
+
+	if err = <-done; err != nil {
+		return flags, err
+	}
 
 	for msg := range imapMessages {
 		flags = msg.Flags
@@ -251,4 +257,3 @@ func MoveMail(acc *config.Account, uid uint32, from string, to string) error {
 
 	return err
 }
-

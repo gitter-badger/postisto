@@ -3,13 +3,11 @@ package conn
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/test/integration"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestConnect(t *testing.T) {
-	assert := assert.New(t)
 	require := require.New(t)
 
 	nocacert := ""
@@ -28,7 +26,7 @@ func TestConnect(t *testing.T) {
 
 	defer func() {
 		for _, acc := range accs {
-			assert.Nil(Disconnect(acc))
+			require.Nil(Disconnect(acc))
 		}
 	}()
 
@@ -36,10 +34,10 @@ func TestConnect(t *testing.T) {
 
 	// connect to IMAP server
 	require.Nil(Connect(accs["starttls"]))
-	assert.Error(Connect(accs["starttls_wrongport"]))
+	require.Error(Connect(accs["starttls_wrongport"]))
 	require.Nil(Connect(accs["imaps"]))
-	assert.Error(Connect(accs["imaps_wrongport"]))
-	//assert.EqualError(Connect(accs["nocacert"]), "x509: certificate signed by unknown authority")
-	assert.EqualError(Connect(accs["badcacert"]), "x509: certificate signed by unknown authority")
-	assert.EqualError(Connect(accs["badcacertpath"]), "open ca-doesnotexist.pem: no such file or directory")
+	require.Error(Connect(accs["imaps_wrongport"]))
+	//require.EqualError(Connect(accs["nocacert"]), "x509: certificate signed by unknown authority")
+	require.EqualError(Connect(accs["badcacert"]), "x509: certificate signed by unknown authority")
+	require.EqualError(Connect(accs["badcacertpath"]), "open ca-doesnotexist.pem: no such file or directory")
 }

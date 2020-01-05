@@ -5,50 +5,44 @@ accounts:
     filters:
       arnold:
         commands:
-          - type: move
-            target: w00t
-            add_flags:
-              - '\Flagged'
+          move: w00t
+          add_flags:
+            - '\Flagged'
         rules:
           - and:
             - from:
               - '.*arnoldbechtoldt.com'
       twitter:
         commands:
-          - type: move
-            target: w00t
+          move: w00t
         rules:
           - and:
             - subject:
               - Twitter
       w00tfilter:
         commands:
-          - type: move
-            target: w00t
+          move: w00t
         rules:
           - or:
             - subject:
               - w00t
       test:
         commands:
-          - type: move
-            target: test
+          move: test
         rules:
           - or:
             - subject:
               - test
       template:
         commands:
-          - type: move
-            target: w00t
+          move: w00t
         rules:
           - or:
             - subject:
               - template
       spam:
         commands:
-          - type: move
-            target: Test
+          move: Test
             #add_flags:
               #- '\SEEN'
               #- '\Flagged'

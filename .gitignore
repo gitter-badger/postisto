@@ -2,3 +2,4 @@ vendor/
 postisto
 coverage.txt
 test/data/configs/invalid-unreadable-file/
+*.tmp

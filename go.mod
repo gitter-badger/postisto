@@ -3,7 +3,7 @@ module github.com/arnisoph/postisto
 go 1.13
 
 require (
-	github.com/emersion/go-imap v1.0.2
+	github.com/emersion/go-imap v1.0.3-0.20200105191252-c79bafa3e782
 	github.com/emersion/go-imap-move v0.0.0-20190710073258-6e5a51a5b342
 	github.com/goccy/go-yaml v1.1.8
 	github.com/imdario/mergo v0.3.8

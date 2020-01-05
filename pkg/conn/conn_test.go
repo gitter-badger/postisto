@@ -26,18 +26,26 @@ func TestConnect(t *testing.T) {
 
 	defer func() {
 		for _, acc := range accs {
-			require.Nil(Disconnect(acc))
+			require.Nil(Disconnect(acc.Connection.Client))
 		}
 	}()
 
 	// ACTUAL TESTS BELOW
 
+	var err error
+
 	// connect to IMAP server
-	require.Nil(Connect(accs["starttls"]))
-	require.Error(Connect(accs["starttls_wrongport"]))
-	require.Nil(Connect(accs["imaps"]))
-	require.Error(Connect(accs["imaps_wrongport"]))
+	accs["starttls"].Connection.Client, err = Connect(accs["starttls"].Connection)
+	require.Nil(err)
+	accs["starttls_wrongport"].Connection.Client, err = Connect(accs["starttls_wrongport"].Connection)
+	require.Error(err)
+	accs["imaps"].Connection.Client, err = Connect(accs["imaps"].Connection)
+	require.Nil(err)
+	accs["imaps_wrongport"].Connection.Client, err = Connect(accs["imaps_wrongport"].Connection)
+	require.Error(err)
 	//require.EqualError(Connect(accs["nocacert"]), "x509: certificate signed by unknown authority")
-	require.EqualError(Connect(accs["badcacert"]), "x509: certificate signed by unknown authority")
-	require.EqualError(Connect(accs["badcacertpath"]), "open ca-doesnotexist.pem: no such file or directory")
+	accs["badcacert"].Connection.Client, err = Connect(accs["badcacert"].Connection)
+	require.EqualError(err, "x509: certificate signed by unknown authority")
+	accs["badcacertpath"].Connection.Client, err = Connect(accs["badcacertpath"].Connection)
+	require.EqualError(err, "open ca-doesnotexist.pem: no such file or directory")
 }

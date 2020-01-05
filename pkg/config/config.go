@@ -20,11 +20,11 @@ type Config struct {
 }
 
 type Account struct {
-	Connection AccountConnection `yaml:"connection"`
+	Connection ConnectionConfig  `yaml:"connection"`
 	Filters    map[string]Filter `yaml:"filters"`
 }
 
-type AccountConnection struct {
+type ConnectionConfig struct {
 	Enabled         bool               `yaml:"enabled"`
 	Server          string             `yaml:"server"`
 	Port            int                `yaml:"port"`

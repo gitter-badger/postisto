@@ -3,16 +3,16 @@ package mail
 import (
 	"bytes"
 	"fmt"
-	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/emersion/go-imap"
-	"github.com/emersion/go-imap-move"
+	imapClient "github.com/emersion/go-imap/client"
+	imapMove "github.com/emersion/go-imap-move"
 	"os"
 	"strings"
 
 	"time"
 )
 
-func UploadMails(acc *config.Account, file string, mailbox string, flags []string) error {
+func UploadMails(c *imapClient.Client, file string, mailbox string, flags []string) error {
 	data, err := os.Open(file)
 	defer data.Close()
 
@@ -26,35 +26,49 @@ func UploadMails(acc *config.Account, file string, mailbox string, flags []strin
 		return err
 	}
 
-	return acc.Connection.Client.Append(mailbox, flags, time.Now(), msg)
+	return c.Append(mailbox, flags, time.Now(), msg)
 }
 
-func searchMails(acc *config.Account) ([]uint32, error) {
+func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
 
 	// Select mailbox
-	_, err := acc.Connection.Client.Select(acc.Connection.InputMailbox.Mailbox, true)
+	_, err := c.Select(mailbox, true)
 	if err != nil {
 		return []uint32{}, err
 	}
 
 	// Define search criteria
+	var anyCriteriaSet bool
 	criteria := imap.NewSearchCriteria()
-	criteria.WithoutFlags = acc.Connection.InputMailbox.WithoutFlags
-
-	// Actually search
-	return acc.Connection.Client.UidSearch(criteria)
-}
-
-func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
-	var fetchedMails []*imap.Message
-	uids, err := searchMails(acc)
-
-	if err != nil || len(uids) == 0 {
-		return fetchedMails, nil
+	if len(withFlags) > 0 {
+		criteria.WithFlags = withFlags
+		anyCriteriaSet = true
+	}
+	if len(withoutFlags) > 0 {
+		criteria.WithoutFlags = withoutFlags
+		anyCriteriaSet = true
 	}
 
+	if !anyCriteriaSet {
+		criteria.All = true
+	}
+
+	// Actually search
+	return c.UidSearch(criteria)
+}
+
+func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]*imap.Message, error) {
+
+	// Select mailbox
+	_, err := c.Select(mailbox, true)
+	if err != nil {
+		return nil, err
+	}
+
+	var fetchedMails []*imap.Message
+
 	seqset := imap.SeqSet{}
-	for _, uid:= range uids {
+	for _, uid := range uids {
 		seqset.AddNum(uid)
 	}
 
@@ -65,7 +79,7 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	imapMessages := make(chan *imap.Message, 10)
 	done := make(chan error, 1)
 	go func() {
-		done <- acc.Connection.Client.UidFetch(&seqset, items, imapMessages)
+		done <- c.UidFetch(&seqset, items, imapMessages)
 	}()
 
 	if err = <-done; err != nil {
@@ -75,6 +89,19 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	for imapMessage := range imapMessages {
 		fetchedMails = append(fetchedMails, imapMessage)
 	}
+
+	return fetchedMails, err
+}
+
+func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]*imap.Message, error) {
+	uids, err := SearchMails(c, mailbox, withFlags, withoutFlags)
+
+	if err != nil || len(uids) == 0 {
+		return nil, nil
+	}
+
+	return FetchMails(c, mailbox, uids)
+
 	/*
 		msgBody := msg.GetBody(&section)
 
@@ -136,32 +163,33 @@ func SearchAndFetchMails(acc *config.Account) ([]*imap.Message, error) {
 	//log.Println(m.Header.Get("Received"))
 	//	}
 
-	return fetchedMails, err
 }
 
-func DeleteMail(acc *config.Account, mailbox string, uid uint32) error {
-	return SetMailFlags(acc, mailbox, uid, "+FLAGS", []interface{}{imap.DeletedFlag})
+func DeleteMails(c *imapClient.Client, mailbox string, uids []uint32) error {
+	return SetMailFlags(c, mailbox, uids, "+FLAGS", []interface{}{imap.DeletedFlag})
 }
 
-func SetMailFlags(acc *config.Account, mailbox string, uid uint32, flagOp string, flags []interface{}) error {
+func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp string, flags []interface{}) error {
 
-	if _, err := acc.Connection.Client.Select(mailbox, false); err != nil {
+	if _, err := c.Select(mailbox, false); err != nil {
 		return err
 	}
 
 	seqset := imap.SeqSet{}
-	seqset.AddNum(uid)
+	for _, uid := range uids {
+		seqset.AddNum(uid)
+	}
 
 	item := imap.FormatFlagsOp(imap.FlagsOp(flagOp), true)
 
-	return acc.Connection.Client.UidStore(&seqset, item, flags, nil)
+	return c.UidStore(&seqset, item, flags, nil)
 }
 
-func GetMailFlags(acc *config.Account, mailbox string, uid uint32) ([]string, error) {
+func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, error) {
 	var flags []string
 	var err error
 
-	if _, err := acc.Connection.Client.Select(mailbox, false); err != nil {
+	if _, err := c.Select(mailbox, false); err != nil {
 		return flags, err
 	}
 
@@ -173,7 +201,7 @@ func GetMailFlags(acc *config.Account, mailbox string, uid uint32) ([]string, er
 	imapMessages := make(chan *imap.Message, 10)
 	done := make(chan error, 1)
 	go func() {
-		done <- acc.Connection.Client.UidFetch(&seqset, items, imapMessages)
+		done <- c.UidFetch(&seqset, items, imapMessages)
 	}()
 
 	if err = <-done; err != nil {
@@ -199,8 +227,8 @@ func GetMailFlags(acc *config.Account, mailbox string, uid uint32) ([]string, er
 //	log.Println("* " + m.Name)
 //}
 
-func CreateMailbox(acc *config.Account, name string) error {
-	return acc.Connection.Client.Create(name)
+func CreateMailbox(c *imapClient.Client, name string) error {
+	return c.Create(name)
 }
 
 //func MoveMail(acc *config.Account, mailbox string, uid uint32) error {
@@ -231,22 +259,25 @@ func CreateMailbox(acc *config.Account, name string) error {
 //	return err
 //}
 
-func MoveMail(acc *config.Account, uid uint32, from string, to string) error {
+func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) error {
 	var err error
-	seqset := imap.SeqSet{}
-	seqset.AddNum(uid)
 
-	if _, err := acc.Connection.Client.Select(from, false); err != nil {
+	seqset := imap.SeqSet{}
+	for _, uid := range uids {
+		seqset.AddNum(uid)
+	}
+
+	if _, err := c.Select(from, false); err != nil {
 		return err
 	}
 
-	moveClient := move.NewClient(acc.Connection.Client)
+	moveClient := imapMove.NewClient(c)
 
 	err = moveClient.UidMove(&seqset, to)
 
 	if err != nil && strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", to)) {
 		// MOVE failed because the target to did not exist. Create it and try again.
-		if err = CreateMailbox(acc, to); err != nil {
+		if err = CreateMailbox(c, to); err != nil {
 			return err
 		}
 

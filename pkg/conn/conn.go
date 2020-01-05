@@ -4,20 +4,22 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	imapClient "github.com/emersion/go-imap/client"
 	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/emersion/go-imap/client"
+
 	"io/ioutil"
 	"os"
 )
 
-func Connect(acc *config.Account) error {
+func Connect(connConfig config.ConnectionConfig) (*imapClient.Client, error) {
+	var c *imapClient.Client
 	var err error
 
 	certPool := x509.NewCertPool()
-	if acc.Connection.TLSCACertFile != "" {
-		pemBytes, err := ioutil.ReadFile(acc.Connection.TLSCACertFile)
+	if connConfig.TLSCACertFile != "" {
+		pemBytes, err := ioutil.ReadFile(connConfig.TLSCACertFile)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		certPool.AppendCertsFromPEM(pemBytes)
@@ -27,45 +29,47 @@ func Connect(acc *config.Account) error {
 	}
 
 	tlsConfig := &tls.Config{
-		ServerName:         acc.Connection.Server,
-		InsecureSkipVerify: !*acc.Connection.TLSVerify, //TODO that's incredibely dangerous! do validation ourself here?
+		ServerName:         connConfig.Server,
+		InsecureSkipVerify: !*connConfig.TLSVerify, //TODO that's incredibely dangerous! do validation ourself here?
 		MinVersion:         tls.VersionTLS12,
 		RootCAs:            certPool,
 	}
 
-	if acc.Connection.IMAPS {
-		acc.Connection.Client, err = client.DialTLS(fmt.Sprintf("%v:%v", acc.Connection.Server, acc.Connection.Port), tlsConfig)
+	if connConfig.IMAPS {
+		c, err = imapClient.DialTLS(fmt.Sprintf("%v:%v", connConfig.Server, connConfig.Port), tlsConfig)
 
 	} else {
-		acc.Connection.Client, err = client.Dial(fmt.Sprintf("%v:%v", acc.Connection.Server, acc.Connection.Port))
+		c, err = imapClient.Dial(fmt.Sprintf("%v:%v", connConfig.Server, connConfig.Port))
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		if *acc.Connection.Starttls {
-			err = acc.Connection.Client.StartTLS(tlsConfig)
+		if *connConfig.Starttls {
+			err = c.StartTLS(tlsConfig)
 		}
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if acc.Connection.Debug {
-		acc.Connection.Client.SetDebug(os.Stderr)
+	if connConfig.Debug {
+		c.SetDebug(os.Stderr)
 	}
 
-	err = acc.Connection.Client.Login(acc.Connection.Username, acc.Connection.Password)
+	if err = c.Login(connConfig.Username, connConfig.Password); err != nil {
+		return nil, err
+	}
 
-	return err
+	return c, err
 }
 
-func Disconnect(acc *config.Account) error {
+func Disconnect(c *imapClient.Client) error {
 
-	if acc.Connection.Client == nil {
+	if c == nil {
 		// no connection
 		return nil
 	}
-	return acc.Connection.Client.Logout()
+	return c.Logout()
 }

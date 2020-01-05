@@ -21,11 +21,11 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 	}
 
 	acc := config.Account{
-		Connection: config.AccountConnection{
+		Connection: config.ConnectionConfig{
 			Enabled:  true,
 			Server:   "localhost",
 			Port:     port,
-			Username: fmt.Sprintf("test-%v@example.com", r1.Intn(10000)),
+			Username: fmt.Sprintf("test-%v@example.com", r1.Intn(100000)),
 			Password: "test",
 			InputMailbox: &config.InputMailbox{
 				Mailbox:      "INBOX",
@@ -45,6 +45,7 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 	err = newIMAPUser(&acc, redisClient)
 	require.Nil(err)
 
+	fmt.Println("=============>", acc.Connection.Username)
 	return &acc
 }
 

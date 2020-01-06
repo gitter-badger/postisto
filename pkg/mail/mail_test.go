@@ -263,7 +263,7 @@ func TestParseMailHeaders(t *testing.T) {
 			subject: "customer sign up",
 		},
 		{ // #5
-			from:    `bigrock <promo@bigrock.com>`,
+			from:    `invalid-address`,
 			to:      `"mr. ütf-8" <foo@bar.net>`,
 			subject: "ütf-8 💩",
 		},

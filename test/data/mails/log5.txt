@@ -23,7 +23,7 @@ To: =?utf-8?B?Ik1yLiDDvHRmLTgi?= <foo@bar.net>
 Subject: =?utf-8?B?w7x0Zi04IPCfkqk=?=
 Message-ID: <0000014e2ed21bf8-035d1578-a0ac-4afe-a3cb-ea4e65b92143-000000@email.amazonses.com>
 Date: Fri, 26 Jun 2015 07:43:18 +0000
-From: "BigRock" <promo@bigrock.com>
+From: invalid-address
 Cc: Foo <a@b.c>, Baz <d@e.f>
 Reply-To: promo@bigrock.com
 MIME-Version: 1.0

@@ -13,7 +13,7 @@ type UnknownCommandTypeError struct {
 }
 
 func (err *UnknownCommandTypeError) Error() string {
-	return fmt.Sprintf("Rule operator %q is unspported", err.opName)
+	return fmt.Sprintf("Rule operator %q is unsupported", err.opName)
 }
 
 func ParseRuleSet(ruleSet config.RuleSet) error {

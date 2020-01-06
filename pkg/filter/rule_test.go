@@ -93,14 +93,14 @@ func TestParseRule(t *testing.T) {
 			}},
 			matchExpected: false,
 		},
-		{ // #6
+		{ // #7
 			headers: MailHeaders{"from": "you"},
 			rule: config.Rule{"non-existent-op": []map[string]interface{}{
 				{"from": "you"},
 				{"to": "you"},
 			}},
 			matchExpected: false,
-			err:           `Rule operator "non-existent-op" is unspported`,
+			err:           `Rule operator "non-existent-op" is unsupported`,
 		},
 	}
 

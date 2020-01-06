@@ -105,6 +105,21 @@ func TestParseRuleSet(t *testing.T) {
 		},
 		{
 			filters: config.FilterSet{
+				"failing and comparison": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"and": []map[string]interface{}{
+								{"from": "you"},
+								{"to": "you"},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: false,
+		},
+		{
+			filters: config.FilterSet{
 				"failing with unsupported op": config.Filter{
 					RuleSet: config.RuleSet{
 						{

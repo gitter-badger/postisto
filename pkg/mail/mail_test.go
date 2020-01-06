@@ -23,6 +23,8 @@ func TestUploadMails(t *testing.T) {
 	acc.Connection.Client, err = conn.Connect(acc.Connection)
 	require.Nil(err)
 
+	// ACTUAL TESTS BELOW
+
 	require.EqualError(UploadMails(acc.Connection.Client, "does-not-exit.txt", "INBOX", []string{}), "open does-not-exit.txt: no such file or directory")
 	require.Error(UploadMails(acc.Connection.Client, "../../test/data/mails/empty-mail.txt", "INBOX", []string{}))
 }

@@ -9,10 +9,6 @@ import (
 	"strings"
 )
 
-func New() Config {
-	return Config{}
-}
-
 func (cfg Config) Load(configPath string) (Config, error) {
 
 	var configFiles []string

@@ -399,9 +399,9 @@ func TestParseRuleSet(t *testing.T) {
 		//},
 	}
 
-	testMailHeaders := MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""}
+	testMailHeaders := config.MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""}
 
-	cfg := config.New()
+	cfg := config.NewConfig()
 	cfg, err := cfg.Load("../../test/data/configs/valid/test/TestParserRuleSet.yaml")
 	require.Nil(err)
 

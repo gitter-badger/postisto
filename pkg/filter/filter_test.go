@@ -38,7 +38,7 @@ func TestEvaluateFilterSetOnMails(t *testing.T) {
 	require := require.New(t)
 
 	// Get config
-	cfg := config.New()
+	cfg := config.NewConfig()
 	cfg, err := cfg.Load("../../test/data/configs/valid/")
 	require.Nil(err)
 	acc := cfg.Accounts["local_imap_server"]

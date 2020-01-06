@@ -9,7 +9,7 @@ import (
 func TestGetConfig(t *testing.T) {
 	require := require.New(t)
 
-	cfg := New()
+	cfg := NewConfig()
 	var err error
 
 	// ACTUAL TESTS BELOW
@@ -45,7 +45,7 @@ func TestGetConfig(t *testing.T) {
 func TestFilterSet_Names(t *testing.T) {
 	require := require.New(t)
 
-	cfg := New()
+	cfg := NewConfig()
 	var err error
 
 	// ACTUAL TESTS BELOW

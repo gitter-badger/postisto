@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/emersion/go-imap"
 	imapClient "github.com/emersion/go-imap/client"
 )
 
@@ -11,6 +12,10 @@ type Config struct {
 		//logging
 		UseGPGAgent bool `yaml:"gpg_use_agent"`
 	} `yaml:"settings"`
+}
+
+func NewConfig() Config {
+	return Config{}
 }
 
 type Account struct {
@@ -59,4 +64,14 @@ type Rule map[string][]map[string]interface{}
 type InputMailbox struct {
 	Mailbox      string   `yaml:"mailbox"`
 	WithoutFlags []string `yaml:"without_flags,flow"`
+}
+
+type Mail struct {
+	RawMail *imap.Message
+	Headers MailHeaders
+}
+type MailHeaders map[string]string
+
+func NewMail(rawMail *imap.Message) Mail {
+	return Mail{RawMail: rawMail, Headers: MailHeaders{}}
 }

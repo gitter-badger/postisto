@@ -8,9 +8,7 @@ import (
 	"strings"
 )
 
-type MailHeaders map[string]string
-
-func ParseRuleSet(ruleSet config.RuleSet, headers MailHeaders) (bool, error) {
+func ParseRuleSet(ruleSet config.RuleSet, headers config.MailHeaders) (bool, error) {
 	var err error
 
 	for _, rule := range ruleSet {
@@ -28,7 +26,7 @@ func ParseRuleSet(ruleSet config.RuleSet, headers MailHeaders) (bool, error) {
 	return false, err
 }
 
-func parseRule(rule config.Rule, headers MailHeaders) (bool, error) {
+func parseRule(rule config.Rule, headers config.MailHeaders) (bool, error) {
 	var err error
 
 	for op, patterns := range rule {

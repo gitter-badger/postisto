@@ -3,9 +3,11 @@ package mail
 import (
 	"bytes"
 	"fmt"
+	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/emersion/go-imap"
 	imapMove "github.com/emersion/go-imap-move"
 	imapClient "github.com/emersion/go-imap/client"
+	mailUtil "github.com/emersion/go-message/mail"
 	"os"
 	"strings"
 
@@ -50,7 +52,7 @@ func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, witho
 	return c.UidSearch(criteria)
 }
 
-func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]*imap.Message, error) {
+func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.Mail, error) {
 
 	// Select mailbox
 	_, err := c.Select(mailbox, true)
@@ -58,7 +60,7 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]*imap.Me
 		return nil, err
 	}
 
-	var fetchedMails []*imap.Message
+	var fetchedMails []config.Mail
 
 	seqset := imap.SeqSet{}
 	for _, uid := range uids {
@@ -67,7 +69,7 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]*imap.Me
 
 	var section imap.BodySectionName
 	section.Specifier = imap.HeaderSpecifier // Loads all headers only (no body)
-	items := []imap.FetchItem{section.FetchItem(), imap.FetchUid}
+	items := []imap.FetchItem{section.FetchItem(), imap.FetchUid, imap.FetchEnvelope}
 
 	imapMessages := make(chan *imap.Message, 10)
 	done := make(chan error, 1)
@@ -80,13 +82,13 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]*imap.Me
 	}
 
 	for imapMessage := range imapMessages {
-		fetchedMails = append(fetchedMails, imapMessage)
+		fetchedMails = append(fetchedMails, config.NewMail(imapMessage))
 	}
 
 	return fetchedMails, err
 }
 
-func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]*imap.Message, error) {
+func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]config.Mail, error) {
 	uids, err := SearchMails(c, mailbox, withFlags, withoutFlags)
 
 	if err != nil || len(uids) == 0 {
@@ -94,68 +96,6 @@ func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []strin
 	}
 
 	return FetchMails(c, mailbox, uids)
-
-	/*
-		msgBody := msg.GetBody(&section)
-
-		if msgBody == nil {
-			log.Fatal("Server didn't returned message body")
-			return fetchedMails, nil
-		}
-
-		m, err := mail.CreateReader(msgBody)
-		if err != nil {
-			log.Fatal(err)
-		}
-	*/
-
-	//fields := m.Header.FieldsByKey("received")
-	//for {
-	//	next := fields.Next()
-	//	if !next { break }
-	//	log.Println(fields.Key(), " => ", fields.Value())
-	//
-	//}
-
-	/*
-		date, _ := m.Header.Date()
-		sub, _ := m.Header.Subject()
-		from, _ := m.Header.AddressList("from")
-
-
-		log.Println(date.Local(), sub, from[0].Name, )
-	*/
-
-	/*
-		// Process each message's part
-		for {
-			p, err := m.NextPart()
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				log.Fatal(err)
-			}
-
-			switch h := p.Header.(type) {
-			case *mail.InlineHeader:
-				// This is the message's text (can be plain-text or HTML)
-				b, _ := ioutil.ReadAll(p.Body)
-				log.Printf("Got text: %v", string(b))
-			case *mail.AttachmentHeader:
-				// This is an attachment
-				filename, _ := h.Filename()
-				log.Printf("Got attachment: %v", filename)
-			}
-
-		}
-	*/
-
-	//log.Println("* " + msg.Envelope.MessageId + " / " + msg.Envelope.From[0].MailboxName, msg)
-	//raw := msg.GetBody(section)
-	//m, _ := mail.ReadMessage(raw)
-	//log.Println(m.Header.Get("Received"))
-	//	}
-
 }
 
 func DeleteMails(c *imapClient.Client, mailbox string, uids []uint32, expunge bool) error {
@@ -288,4 +228,82 @@ func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) erro
 	}
 
 	return err
+}
+
+func ParseMailHeaders(c *imapClient.Client, mails []config.Mail) ([]config.Mail, error) {
+	var err error
+
+	var section imap.BodySectionName
+	section.Specifier = imap.HeaderSpecifier // Loads all headers only (no body)
+
+	for _, msg := range mails {
+		msgBody := msg.RawMail.GetBody(&section)
+
+		if msgBody == nil {
+			return mails, fmt.Errorf("server didn't returned message body for mail")
+		}
+
+		mr, err := mailUtil.CreateReader(msgBody)
+		if err != nil {
+			return mails, err
+		}
+
+		fields := mr.Header.Fields()
+		//fields := m.Header.FieldsByKey("received")
+
+		addrFields := []string{"from", "to", "cc"}
+		for _, field := range addrFields {
+			addrs, err := mr.Header.AddressList(field)
+			if err != nil && err.Error() != "mail: missing '@' or angle-addr" { //ignore bad formated addrs
+				return mails, err
+			}
+
+			for _, addr := range addrs {
+				msg.Headers[field] += strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v <%v>", addr.Name, addr.Address)))
+			}
+		}
+
+		msg.Headers["subject"] = strings.ToLower(fmt.Sprintf("%v", msg.RawMail.Envelope.Subject))
+		msg.Headers["date"] = strings.ToLower(fmt.Sprintf("%v", msg.RawMail.Envelope.Date))
+		msg.Headers["reply-to"] = strings.ToLower(fmt.Sprintf("%v", msg.RawMail.Envelope.ReplyTo))
+		msg.Headers["message-id"] = strings.ToLower(fmt.Sprintf("%v", msg.RawMail.Envelope.MessageId))
+
+		for {
+			next := fields.Next()
+			if !next {
+				break
+			}
+
+			if msg.Headers[strings.ToLower(fields.Key())] == "" { //TODO support received?
+				fmt.Println("schreibne", fields.Key())
+				msg.Headers[strings.ToLower(fields.Key())] = strings.ToLower(fields.Value())
+			}
+		}
+
+		/*
+			// Process each message's part
+			for {
+				p, err := m.NextPart()
+				if err == io.EOF {
+					break
+				} else if err != nil {
+					log.Fatal(err)
+				}
+
+				switch h := p.Header.(type) {
+				case *mail.InlineHeader:
+					// This is the message's text (can be plain-text or HTML)
+					b, _ := ioutil.ReadAll(p.Body)
+					log.Printf("Got text: %v", string(b))
+				case *mail.AttachmentHeader:
+					// This is an attachment
+					filename, _ := h.Filename()
+					log.Printf("Got attachment: %v", filename)
+				}
+
+			}
+		*/
+	}
+
+	return mails, err
 }

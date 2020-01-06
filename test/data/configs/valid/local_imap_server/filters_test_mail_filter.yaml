@@ -1,7 +1,7 @@
 # vim: ts=2 sw=2 et
 
 accounts:
-  test:
+  local_imap_server:
     filters:
       simple:
         commands:

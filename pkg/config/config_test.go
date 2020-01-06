@@ -7,7 +7,6 @@ import (
 )
 
 func TestGetConfig(t *testing.T) {
-
 	require := require.New(t)
 
 	cfg := New()

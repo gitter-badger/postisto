@@ -42,10 +42,11 @@ type ConnectionConfig struct {
 
 type Filter struct {
 	Commands Commands `yaml:"commands,flow"`
-	//Rules    []Rule    `yaml:"rules"`
+	RuleSet  RuleSet  `yaml:"rules"`
 }
 type Commands map[string]interface{}
-type Rule []map[string]interface{}
+type RuleSet []Rule
+type Rule map[string][]map[string]interface{}
 
 type InputMailbox struct {
 	Mailbox      string   `yaml:"mailbox"`

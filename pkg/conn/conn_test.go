@@ -16,13 +16,13 @@ func TestConnect(t *testing.T) {
 	badcacertpath := "ca-doesnotexist.pem"
 
 	accs := map[string]*config.Account{
-		"starttls":           integration.NewAccount(t, 10143, true, false, true, nil),
-		"starttls_wrongport": integration.NewAccount(t, 42, true, false, true, nil),
-		"imaps":              integration.NewAccount(t, 10993, false, true, true, nil),
-		"imaps_wrongport":    integration.NewAccount(t, 42, false, true, true, nil),
-		"nocacert":           integration.NewAccount(t, 10143, true, false, true, &nocacert),
-		"badcacert":          integration.NewAccount(t, 10143, true, false, true, &badcacert),
-		"badcacertpath":      integration.NewAccount(t, 10143, true, false, true, &badcacertpath),
+		"starttls":           integration.NewAccount(t, "", "", 10143, true, false, true, nil),
+		"starttls_wrongport": integration.NewAccount(t, "", "", 42, true, false, true, nil),
+		"imaps":              integration.NewAccount(t, "", "", 10993, false, true, true, nil),
+		"imaps_wrongport":    integration.NewAccount(t, "", "", 42, false, true, true, nil),
+		"nocacert":           integration.NewAccount(t, "", "", 10143, true, false, true, &nocacert),
+		"badcacert":          integration.NewAccount(t, "", "", 10143, true, false, true, &badcacert),
+		"badcacertpath":      integration.NewAccount(t, "", "", 10143, true, false, true, &badcacertpath),
 	}
 
 	defer func() {

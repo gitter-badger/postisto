@@ -3,24 +3,18 @@ package filter
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"reflect"
 	"regexp"
 	"strings"
 )
 
 type MailHeaders map[string]string
 
-type UnknownCommandTypeError struct {
-	opName string
-}
-
-func (err *UnknownCommandTypeError) Error() string {
-	return fmt.Sprintf("Rule operator %q is unsupported", err.opName)
-}
-
 func ParseRuleSet(ruleSet config.RuleSet, headers MailHeaders) (bool, error) {
 	var err error
 
 	for _, rule := range ruleSet {
+		//fmt.Println("rule:", rule)
 		matched, err := parseRule(rule, headers)
 		if err != nil {
 			return false, err
@@ -40,29 +34,24 @@ func parseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 	for op, patterns := range rule {
 		op = strings.ToLower(op)
 
+		//fmt.Println("new", rule)
 		switch op {
 		case "or":
 			for _, pattern := range patterns {
-				for patternHeaderName, patternValue := range pattern {
-					matched, err := checkMatch(patternValue.(string), headers[patternHeaderName])
-					if err != nil {
+				for patternHeaderName, patternValues := range pattern {
+					if matched, err := checkRulePattern(patternValues, headers[patternHeaderName]); err != nil {
 						return false, err
-					}
-
-					if matched {
+					} else if matched {
 						return true, nil
 					}
 				}
 			}
 		case "and":
 			for _, pattern := range patterns {
-				for patternHeaderName, patternValue := range pattern {
-					matched, err := checkMatch(patternValue.(string), headers[patternHeaderName])
-					if err != nil {
+				for patternHeaderName, patternValues := range pattern {
+					if matched, err := checkRulePattern(patternValues, headers[patternHeaderName]); err != nil {
 						return false, err
-					}
-
-					if !matched {
+					} else if !matched {
 						return false, nil
 					}
 				}
@@ -70,17 +59,40 @@ func parseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 
 			return true, nil
 		default:
-			return false, &UnknownCommandTypeError{opName: op}
+			return false, fmt.Errorf("rule operator %q is unsupported", op)
 		}
 	}
 
 	return false, err
 }
 
+func checkRulePattern(patternValues interface{}, header string) (bool, error) {
+	parsedValues, err := parsePatternValues(patternValues)
+	if err != nil {
+		return false, err
+	}
+
+	//fmt.Println("Values:", parsedValues)
+	for _, patternValue := range parsedValues {
+		matched, err := checkMatch(patternValue, header)
+		if err != nil {
+			return false, err
+		}
+
+		if matched {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func checkMatch(pattern string, s string) (bool, error) {
 	pattern = strings.ToLower(pattern)
 	s = strings.ToLower(s)
 	var err error
+
+	//fmt.Printf("Comparing %v with %v\n", pattern, s)
 
 	if pattern == "" && s == "" {
 		return true, err
@@ -108,4 +120,27 @@ func checkMatch(pattern string, s string) (bool, error) {
 	}
 
 	return false, err
+}
+
+func parsePatternValues(patternValues interface{}) ([]string, error) {
+	var values []string
+
+	switch v := patternValues.(type) {
+	case string:
+		return append(values, v), nil
+	case []interface{}:
+		for _, val := range v {
+			values = append(values, val.(string))
+		}
+
+		return values, nil
+	case []string:
+		for _, val := range v {
+			values = append(values, val)
+		}
+
+		return values, nil
+	default:
+		return values, fmt.Errorf("unsupported value type %v", reflect.TypeOf(v))
+	}
 }

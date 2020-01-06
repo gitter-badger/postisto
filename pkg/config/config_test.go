@@ -55,5 +55,5 @@ func TestFilterSet_Names(t *testing.T) {
 	require.Nil(err)
 
 	// test our funcy func
-	require.ElementsMatch(cfg.Accounts["local_imap_server"].Filters.Names(), []string{"shops"})
+	require.ElementsMatch(cfg.Accounts["local_imap_server"].FilterSet.Names(), []string{"shops"})
 }

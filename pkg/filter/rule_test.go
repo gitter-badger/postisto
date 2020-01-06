@@ -132,7 +132,7 @@ func TestParseRuleSet(t *testing.T) {
 				},
 			},
 			matchExpected: false,
-			err:           `Rule operator "non-existent-op" is unsupported`,
+			err:           `rule operator "non-existent-op" is unsupported`,
 		},
 		{
 			filters: config.FilterSet{
@@ -290,6 +290,65 @@ func TestParseRuleSet(t *testing.T) {
 			},
 			matchExpected: false,
 		},
+		{
+			filters: config.FilterSet{
+				"1o1 comparison with multiple values": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"or": []map[string]interface{}{
+								{"from": []string{"foo@example.com", "example.com", "foo"}},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: true,
+		},
+		{
+			filters: config.FilterSet{
+				"101 comparison in or with multiple values": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"or": []map[string]interface{}{
+								{"from": "oO"},
+								{"from": []string{"foo@example.com", "example.com", "foo"}},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: true,
+		},
+		{
+			filters: config.FilterSet{
+				"101 comparison in OR with multiple values (failing)": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"or": []map[string]interface{}{
+								{"from": "baz"},
+								{"from": []string{"wrong1", "wrong2", "42"}},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: false,
+		},
+		{
+			filters: config.FilterSet{
+				"101 comparison in AND with multiple values (failing)": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"and": []map[string]interface{}{
+								{"from": "baz"},
+								{"from": []string{"foo@example.com", "example.com", "foo"}},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: false,
+		},
 
 		//{
 		//	headers: MailHeaders{"from": "oO"},
@@ -319,7 +378,7 @@ func TestParseRuleSet(t *testing.T) {
 	require.NotNil(acc)
 
 	for i, test := range ruleParserTests {
-		//yml, _ := yaml.Marshal(test.filters)
+		//var yml, _ = yaml.Marshal(test.filters)
 		//fmt.Println(string(yml))
 		//assert.Fail(t, "show yaml")
 
@@ -327,18 +386,26 @@ func TestParseRuleSet(t *testing.T) {
 
 			// Test with native synthetic test data
 			matched, err := ParseRuleSet(filter.RuleSet, testMailHeaders)
+			if test.err == "" {
+				require.Nil(err)
+			}
 			if test.err != "" && err != nil {
 				require.True(strings.HasPrefix(err.Error(), test.err), "NATIVE DATA TEST: Actual error message: %v", err.Error())
 			}
-			require.Equal(test.matchExpected, matched, "NATIVE DATA TEST: Test #%v (%q) from ruleParserTests failed: ruleSet=%q testMailHeaders=%q", i+1, filterName, filter.RuleSet, testMailHeaders)
 
+			require.Equal(test.matchExpected, matched, "NATIVE DATA TEST: Test #%v (%q) from ruleParserTests failed! ruleSet=%q testMailHeaders=%q", i+1, filterName, filter.RuleSet, testMailHeaders)
+
+			//continue
 			// Test with same synthetic ruleSet test data from YAML
-			require.Contains(acc.Filters.Names(), filterName)
-			ymlFilter := acc.Filters[filterName]
+			require.Contains(acc.FilterSet.Names(), filterName, "Add test %q to TestParserRuleSet.yml!", filterName)
+			ymlFilter := acc.FilterSet[filterName]
 			require.NotNil(ymlFilter)
 			require.NotNil(ymlFilter.RuleSet)
 
 			matched, err = ParseRuleSet(ymlFilter.RuleSet, testMailHeaders)
+			if test.err == "" {
+				require.Nil(err)
+			}
 			if test.err != "" && err != nil {
 				require.True(strings.HasPrefix(err.Error(), test.err), "YML DATA TEST: Actual error message: %v", err.Error())
 			}

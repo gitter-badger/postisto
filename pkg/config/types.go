@@ -1,6 +1,8 @@
 package config
 
-import imapClient "github.com/emersion/go-imap/client"
+import (
+	imapClient "github.com/emersion/go-imap/client"
+)
 
 type Config struct {
 	Accounts map[string]*Account `yaml:"accounts"`
@@ -13,7 +15,7 @@ type Config struct {
 
 type Account struct {
 	Connection ConnectionConfig `yaml:"connection"`
-	Filters    FilterSet        `yaml:"filters"`
+	FilterSet  FilterSet        `yaml:"filters"`
 }
 
 type ConnectionConfig struct {

@@ -10,10 +10,9 @@ import (
 	"time"
 )
 
-func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify bool, cacertfile *string) *config.Account {
+func NewAccount(t *testing.T, username string, password string, port int, starttls bool, imaps bool, tlsverify bool, cacertfile *string) *config.Account {
 
 	require := require.New(t)
-	r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	if cacertfile == nil {
 		defaultcacert := "../../test/data/certs/ca.pem"
@@ -25,8 +24,8 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 			Enabled:  true,
 			Server:   "localhost",
 			Port:     port,
-			Username: fmt.Sprintf("test-%v@example.com", r1.Intn(100000)),
-			Password: "test",
+			Username: NewUsername(username),
+			Password: password,
 			InputMailbox: &config.InputMailbox{
 				Mailbox:      "INBOX",
 				WithoutFlags: []string{"\\Seen", "\\Flagged"},
@@ -49,7 +48,16 @@ func NewAccount(t *testing.T, port int, starttls bool, imaps bool, tlsverify boo
 }
 
 func NewStandardAccount(t *testing.T) *config.Account {
-	return NewAccount(t, 10143, true, false, true, nil)
+	return NewAccount(t, "", "test", 10143, true, false, true, nil)
+}
+
+func NewUsername(u string) string {
+	if u != "" {
+		return u
+	}
+
+	r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return fmt.Sprintf("test-%v@example.com", r1.Intn(100000))
 }
 
 func newIMAPUser(acc *config.Account, redisClient *redis.Client) error {

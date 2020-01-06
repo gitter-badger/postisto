@@ -142,3 +142,42 @@ accounts:
           - subject: löasdv
         - and:
           - from: ""
+
+      1o1 comparison with multiple values:
+        commands: {}
+        rules:
+        - or:
+          - from:
+            - foo@example.com
+            - example.com
+            - foo
+
+      101 comparison in or with multiple values:
+        commands: {}
+        rules:
+        - or:
+          - from: oO
+          - from:
+            - foo@example.com
+            - example.com
+            - foo
+
+      101 comparison in OR with multiple values (failing):
+        commands: {}
+        rules:
+        - or:
+          - from: baz
+          - from:
+            - wrong1
+            - wrong2
+            - "42"
+
+      101 comparison in AND with multiple values (failing):
+        commands: {}
+        rules:
+        - and:
+          - from: baz
+          - from:
+            - foo@example.com
+            - example.com
+            - foo

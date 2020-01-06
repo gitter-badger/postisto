@@ -83,7 +83,7 @@ func ParseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 			return false, &UnknownCommandTypeError{opName: op}
 		}
 	}
-	
+
 	return false, err
 }
 

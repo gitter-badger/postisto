@@ -28,8 +28,6 @@ func TestParseRule(t *testing.T) {
 
 	// ACTUAL TESTS BELOW
 
-	testMailHeaders := MailHeaders{"from": "foo@example.com", "to": "me@example.com", "subject": "with löve"}
-
 	ruleParserTests := []struct {
 		rule          config.Rule
 		matchExpected bool
@@ -143,7 +141,12 @@ func TestParseRule(t *testing.T) {
 			matchExpected: true,
 		},
 		{ // #17
-			rule:          config.Rule{"and": []map[string]interface{}{{"to": "!^\\ü^@example.com"}}}, // bad regex
+			rule:          config.Rule{"or": []map[string]interface{}{{"to": "!^\\ü^@example.com"}}}, // bad regex (or)
+			matchExpected: false,
+			err:           "error parsing regexp: invalid escape sequence: `\\ü`",
+		},
+		{ // #18
+			rule:          config.Rule{"and": []map[string]interface{}{{"to": "!^\\ü^@example.com"}}}, // bad regex (and)
 			matchExpected: false,
 			err:           "error parsing regexp: invalid escape sequence: `\\ü`",
 		},
@@ -165,7 +168,7 @@ func TestParseRule(t *testing.T) {
 		},
 	*/
 
-	testMailHeaders = MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""}
+	testMailHeaders := MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""}
 
 	for i, test := range ruleParserTests {
 		matched, err := ParseRule(test.rule, testMailHeaders)

@@ -280,4 +280,5 @@ func TestParseMailHeaders(t *testing.T) {
 	require.Equal("<0000014e2ed21bf8-035d1578-a0ac-4afe-a3cb-ea4e65b92143-000000@email.amazonses.com>", fetchedMails[4].Headers["message-id"])
 	require.Equal("<http://emailsparrow.com/unsubscribe.php?m=2392014&c=6508a8072980153786bbab4969679c2a&l=19&n=57154>", fetchedMails[4].Headers["list-unsubscribe"])
 	require.Equal("2392014", fetchedMails[4].Headers["x-mailer-recptid"])
+	require.Equal("foo <a@b.c>, baz <d@e.f>", fetchedMails[4].Headers["cc"])
 }

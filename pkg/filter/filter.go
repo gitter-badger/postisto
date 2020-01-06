@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/mail"
 	imapClient "github.com/emersion/go-imap/client"
@@ -17,8 +16,8 @@ func EvaluateFilterSetOnMails(acc config.Account) (bool, error) {
 
 	for _, mail := range mails {
 		var matched bool
-		for filterName, filterSet := range acc.FilterSet {
-			matched, err = ParseRuleSet(filterSet.RuleSet, config.MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""})
+		for _, filterSet := range acc.FilterSet {
+			matched, err = ParseRuleSet(filterSet.RuleSet, mail.Headers)
 			if err != nil {
 				return false, err
 			}
@@ -26,7 +25,7 @@ func EvaluateFilterSetOnMails(acc config.Account) (bool, error) {
 			if matched {
 				return true, err
 			}
-			fmt.Println(filterName, matched, mail)
+			//fmt.Println(filterName, matched, mail)
 		}
 	}
 

@@ -259,6 +259,9 @@ func ParseMailHeaders(c *imapClient.Client, mails []config.Mail) ([]config.Mail,
 			}
 
 			for _, addr := range addrs {
+				if msg.Headers[field] != "" {
+					msg.Headers[field] += ", "
+				}
 				msg.Headers[field] += strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v <%v>", addr.Name, addr.Address)))
 			}
 		}
@@ -275,7 +278,7 @@ func ParseMailHeaders(c *imapClient.Client, mails []config.Mail) ([]config.Mail,
 			}
 
 			if msg.Headers[strings.ToLower(fields.Key())] == "" { //TODO support received?
-				fmt.Println("schreibne", fields.Key())
+				//fmt.Println("schreibne", fields.Key())
 				msg.Headers[strings.ToLower(fields.Key())] = strings.ToLower(fields.Value())
 			}
 		}

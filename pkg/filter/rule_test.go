@@ -245,7 +245,7 @@ func TestParseRuleSet(t *testing.T) {
 				"comparison with bad regex (and)": config.Filter{
 					RuleSet: config.RuleSet{
 						{
-							"or": []map[string]interface{}{{"to": "!^\\ü^@example.com"}},
+							"and": []map[string]interface{}{{"to": "!^\\ü^@example.com"}},
 						},
 					},
 				},

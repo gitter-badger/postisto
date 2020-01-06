@@ -28,29 +28,27 @@ func TestParseRule(t *testing.T) {
 
 	// ACTUAL TESTS BELOW
 
+	testMailHeaders := MailHeaders{"from": "foo@example.com", "to": "me@example.com", "subject": "with löve"}
+
 	ruleParserTests := []struct {
-		headers       MailHeaders
 		rule          config.Rule
 		matchExpected bool
 		err           string
 	}{
 		{ // #1
-			headers:       MailHeaders{"from": "oO"},
-			rule:          config.Rule{"or": []map[string]interface{}{{"from": "oO"}}},
+			rule:          config.Rule{"or": []map[string]interface{}{{"from": "foo@example.com"}}},
 			matchExpected: true,
 		},
 		{ // #2
-			headers: MailHeaders{"from": "oO"},
 			rule: config.Rule{
 				"or": []map[string]interface{}{
 					{"from": "oO"},
-					{"from": "nope"},
+					{"from": "foo@example.com"},
 				}},
 			matchExpected: true,
 		},
 		{ // #3
-			headers:       MailHeaders{"from": "oO"},
-			rule:          config.Rule{"or": []map[string]interface{}{{"from": "!oO"}}},
+			rule:          config.Rule{"or": []map[string]interface{}{{"from": "wrong value"}}},
 			matchExpected: false,
 		},
 		//{
@@ -70,15 +68,13 @@ func TestParseRule(t *testing.T) {
 		//	matchExpected: true,
 		//},
 		{ // #4
-			headers: MailHeaders{"from": "you", "to": "me"},
 			rule: config.Rule{"and": []map[string]interface{}{
-				{"from": "you"},
-				{"to": "me"},
+				{"from": "foo@example.com"},
+				{"to": "me@EXAMPLE.com"},
 			}},
 			matchExpected: true,
 		},
 		{ // #5
-			headers: MailHeaders{"from": "you", "to": "me"},
 			rule: config.Rule{"and": []map[string]interface{}{
 				{"from": "you"},
 				{"to": "you"},
@@ -86,7 +82,6 @@ func TestParseRule(t *testing.T) {
 			matchExpected: false,
 		},
 		{ // #6
-			headers: MailHeaders{"from": "you"},
 			rule: config.Rule{"and": []map[string]interface{}{
 				{"from": "you"},
 				{"to": "you"},
@@ -94,13 +89,63 @@ func TestParseRule(t *testing.T) {
 			matchExpected: false,
 		},
 		{ // #7
-			headers: MailHeaders{"from": "you"},
 			rule: config.Rule{"non-existent-op": []map[string]interface{}{
 				{"from": "you"},
 				{"to": "you"},
 			}},
 			matchExpected: false,
 			err:           `Rule operator "non-existent-op" is unsupported`,
+		},
+		{ // #8
+			rule:          config.Rule{"and": []map[string]interface{}{{"from": "@example.com"}}},
+			matchExpected: true,
+		},
+		{ // #9
+			rule:          config.Rule{"and": []map[string]interface{}{{"from": "@example.com"}}},
+			matchExpected: true,
+		},
+		{ // #10
+			rule:          config.Rule{"and": []map[string]interface{}{{"from": ""}}},
+			matchExpected: false,
+		},
+		{ // #11
+			rule:          config.Rule{"and": []map[string]interface{}{{"from": "@example.com"}}},
+			matchExpected: true,
+		},
+		{ // #12
+			rule:          config.Rule{"and": []map[string]interface{}{{"empty-header": ""}}},
+			matchExpected: true,
+		},
+		{ // #13
+			rule:          config.Rule{"and": []map[string]interface{}{{"subject": "löv"}}},
+			matchExpected: true,
+		},
+		{ // #14
+			rule:          config.Rule{"and": []map[string]interface{}{{"from": "@EXAMPLE.COM"}}},
+			matchExpected: true,
+		},
+		{ // #15
+			rule:          config.Rule{"and": []map[string]interface{}{{"to": "@example.com"}}},
+			matchExpected: true,
+		},
+		{ // #16
+			rule: config.Rule{"and": []map[string]interface{}{
+				{"subject": "löve$"},
+				{"subject": "^with löve$"},
+				{"subject": "^wit.*ve$"},
+				{"subject": "^with\\s+löve$"},
+				{"subject": "^.*$"},
+				{"subject": ".*"},
+				{"subject": "^with\\s+l(ö|ä)ve$"},
+				{"subject": "^with\\s+l(?:ö|ä)ve$"},
+				{"subject": "^WITH"},
+			}},
+			matchExpected: true,
+		},
+		{ // #17
+			rule:          config.Rule{"and": []map[string]interface{}{{"to": "!^\\ü^@example.com"}}}, // bad regex
+			matchExpected: false,
+			err:           "error parsing regexp: invalid escape sequence: `\\ü`",
 		},
 	}
 
@@ -120,21 +165,13 @@ func TestParseRule(t *testing.T) {
 		},
 	*/
 
-	/*	ruleParserTests = append(ruleParserTests, struct {
-			headers       MailHeaders
-			rule          config.Rule
-			matchExpected bool
-		}{
-			headers:       MailHeaders{"from": "oO"},
-			rule:          rule,
-			matchExpected: true,
-		})*/
+	testMailHeaders = MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""}
 
 	for i, test := range ruleParserTests {
-		matched, err := ParseRule(test.rule, test.headers)
+		matched, err := ParseRule(test.rule, testMailHeaders)
 		if test.err != "" && err != nil {
 			require.True(strings.HasPrefix(err.Error(), test.err), "Actual error message: %v", err.Error())
 		}
-		require.Equal(test.matchExpected, matched, "Test #%v from ruleParserTests failed", i+1)
+		require.Equal(test.matchExpected, matched, "Test #%v from ruleParserTests failed: testRule=%q testMailHeaders=%q", i+1, test.rule, testMailHeaders)
 	}
 }

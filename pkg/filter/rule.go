@@ -3,6 +3,7 @@ package filter
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"regexp"
 	"strings"
 )
 
@@ -26,9 +27,7 @@ func ParseRuleSet(ruleSet config.RuleSet) error {
 
 func ParseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 	var err error
-	/*
-		switch r := rule.(type) {
-		case config.Rule:*/
+
 	for op, patterns := range rule {
 		op = strings.ToLower(op)
 
@@ -55,17 +54,25 @@ func ParseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 					//	}
 					//case string:
 					//fmt.Println(patternValue, "=s=", headers[patternHeaderName])
-					if patternValue == headers[patternHeaderName] {
+					matched, err := checkMatch(patternValue.(string), headers[patternHeaderName])
+					if err != nil {
+						return false, err
+					}
+
+					if matched {
 						return true, nil
 					}
 				}
 			}
 		case "and":
 			for _, pattern := range patterns {
-				fmt.Println(pattern, "pat")
 				for patternHeaderName, patternValue := range pattern {
-					fmt.Println(patternValue, "patVal")
-					if patternValue != headers[patternHeaderName] {
+					matched, err := checkMatch(patternValue.(string), headers[patternHeaderName])
+					if err != nil {
+						return false, err
+					}
+
+					if !matched {
 						return false, nil
 					}
 				}
@@ -76,15 +83,39 @@ func ParseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 			return false, &UnknownCommandTypeError{opName: op}
 		}
 	}
-	/*case []map[string]interface{}:
-	fmt.Println("hoora")
-	for left, right := range r {
-		fmt.Println(left, right)
-	}*/
-	/*
-		default:
-			fmt.Println("fuck!", r)
-		}
-	*/
+	
+	return false, err
+}
+
+func checkMatch(pattern string, s string) (bool, error) {
+	pattern = strings.ToLower(pattern)
+	s = strings.ToLower(s)
+	var err error
+
+	if pattern == "" && s == "" {
+		return true, err
+	}
+
+	if pattern == "" && s != "" {
+		return false, err
+	}
+
+	if pattern == s {
+		return true, err
+	}
+
+	if strings.Contains(s, pattern) {
+		return true, err
+	}
+
+	regEx, err := regexp.Compile(pattern)
+	if err != nil {
+		return false, err
+	}
+
+	if regEx.MatchString(s) {
+		return true, err
+	}
+
 	return false, err
 }

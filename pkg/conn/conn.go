@@ -54,7 +54,7 @@ func Connect(connConfig config.ConnectionConfig) (*imapClient.Client, error) {
 		return nil, err
 	}
 
-	if connConfig.Debug {
+	if true { //TODO
 		c.SetDebug(os.Stderr)
 	}
 

@@ -1,0 +1,87 @@
+# vim: ts=2 sw=2 et
+
+accounts:
+  local_imap_server:
+    connection: {}
+    filters:
+      main:
+        commands:
+          move: MyTarget
+        rules:
+          - and:
+            - from:
+              - @youth4work.com
+#      test_and:
+#        commands:
+#          move: MailFilterTest-TestAND
+#        rules:
+#          - and:
+#            - from:
+#              - '"BigRock.com Sales Team" <automail@bigrock.com>'
+#            - delivered-to:
+#              - cyberzonec.in
+#      test_regex:
+#        commands:
+#          move: MailFilterTest-TestRegex
+#        rules:
+#          - and:
+#            - from:
+#              - '^.*@bigrock\.com.*$'
+#            - delivered-to:
+#              - cyberzonec.in
+#            - content-type:
+#              - ^(?:text/html|text/plain).*$
+#      tes_misc:
+#        commands:
+#          move: MailFilterTest-TestMisc
+#        rules:
+#          - or:
+#            - subject:
+#              - Thanks For Your Application
+#            - reply-to:
+#              - news.websummit.net
+#            - list-id:
+#              - ^.*$ # Match if List-ID exists
+#            - x-virus-scanned:
+#              - orionsmtp-123.s7.exacttarget.com
+#            - X-Received:
+#              - 10.52.3.166
+#      test_unicode_from:
+#        commands:
+#          move: MailFilterTest-TestUnicodeFrom
+#        rules:
+#          - and:
+#            - from:
+#                - tuifeideyaozi@gmail.com
+#                - 梦龙周 <tuifeideyaozi@gmail.com>
+#                - 梦龙周
+#                - '梦龙周'
+#      test_unicode_subject:
+#        commands:
+#          move: MailFilterTest-TestUnicodeSubject
+#        rules:
+#          - and:
+#            - subject:
+#              - 'AW: Account öfters mal reaktivieren'
+#            - subject:
+#              - '^AW: Account öfters mal reaktivieren$'
+#            - subject:
+#              - '^.*ö.*$'
+#      test_mail16:
+#        commands:
+#          move: MailFilterTest-16
+#        rules:
+#          - and:
+#            - X-Custom-Mail-Id:
+#              - '16'
+#            - X-Notes-Item:
+#              - CSMemoFrom
+#      test_mail17:
+#        commands:
+#          move: MailFilterTest-17
+#        rules:
+#          - and:
+#            - X-Custom-Mail-Id:
+#              - '17'
+#            - Received:
+#              - 75.126.66.62

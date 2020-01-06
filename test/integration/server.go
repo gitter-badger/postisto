@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const MaxTestMailCount = 17
+
 func NewAccount(t *testing.T, username string, password string, port int, starttls bool, imaps bool, tlsverify bool, cacertfile *string) *config.Account {
 
 	require := require.New(t)
@@ -20,22 +22,23 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 	}
 
 	acc := config.Account{
+		InputMailbox: &config.InputMailbox{
+			Mailbox:      "INBOX",
+			WithoutFlags: []string{"\\Seen", "\\Flagged"},
+		},
 		Connection: config.ConnectionConfig{
 			Enabled:  true,
 			Server:   "localhost",
 			Port:     port,
 			Username: NewUsername(username),
 			Password: password,
-			InputMailbox: &config.InputMailbox{
-				Mailbox:      "INBOX",
-				WithoutFlags: []string{"\\Seen", "\\Flagged"},
-			},
+
 			IMAPS:         imaps,
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
-			Debug:         true,
 		},
+		Debug: true,
 	}
 
 	redisClient, err := newRedisClient()

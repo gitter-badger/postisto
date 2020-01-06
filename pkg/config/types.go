@@ -19,24 +19,24 @@ func NewConfig() Config {
 }
 
 type Account struct {
-	Connection ConnectionConfig `yaml:"connection"`
-	FilterSet  FilterSet        `yaml:"filters"`
+	Connection      ConnectionConfig `yaml:"connection"`
+	InputMailbox    *InputMailbox    `yaml:"input"`
+	FallbackMailbox string           `yaml:"fallback_mailbox"`
+	FilterSet       FilterSet        `yaml:"filters"`
+	Debug           bool             `yaml:"debug"` //TODO => use with log setting/level!
 }
 
 type ConnectionConfig struct {
-	Enabled         bool               `yaml:"enabled"`
-	Server          string             `yaml:"server"`
-	Port            int                `yaml:"port"`
-	Username        string             `yaml:"username"`
-	Password        string             `yaml:"password"`
-	InputMailbox    *InputMailbox      `yaml:"input"`
-	FallbackMailbox string             `yaml:"fallback_mailbox"`
-	IMAPS           bool               `yaml:"imaps"`
-	Starttls        *bool              `yaml:"starttls"`
-	TLSVerify       *bool              `yaml:"tlsverify"`
-	TLSCACertFile   string             `yaml:"cacertfile"`
-	Client          *imapClient.Client //TODO custom type?
-	Debug           bool               `yaml:"debug"` //TODO => use with log setting/level!
+	Enabled       bool               `yaml:"enabled"`
+	Server        string             `yaml:"server"`
+	Port          int                `yaml:"port"`
+	Username      string             `yaml:"username"`
+	Password      string             `yaml:"password"`
+	IMAPS         bool               `yaml:"imaps"`
+	Starttls      *bool              `yaml:"starttls"`
+	TLSVerify     *bool              `yaml:"tlsverify"`
+	TLSCACertFile string             `yaml:"cacertfile"`
+	Client        *imapClient.Client //TODO custom type?
 }
 
 type FilterSet map[string]Filter
@@ -54,10 +54,10 @@ func (filterSet FilterSet) Names() []string {
 }
 
 type Filter struct {
-	Commands Commands `yaml:"commands,flow"`
-	RuleSet  RuleSet  `yaml:"rules"`
+	Commands FilterOps `yaml:"commands,flow"`
+	RuleSet  RuleSet   `yaml:"rules"`
 }
-type Commands map[string]interface{}
+type FilterOps map[string]interface{}
 type RuleSet []Rule
 type Rule map[string][]map[string]interface{}
 
@@ -72,6 +72,12 @@ type Mail struct {
 }
 type MailHeaders map[string]string
 
-func NewMail(rawMail *imap.Message) Mail {
-	return Mail{RawMail: rawMail, Headers: MailHeaders{}}
+func NewMail(rawMail *imap.Message, headers MailHeaders) Mail {
+	return Mail{RawMail: rawMail, Headers: headers}
 }
+
+//func (msg Mail) GetHeaders(c *imapClient.Client) MailHeaders {
+//	if len(msg.headers) == 0 {
+//		mail.ParseMailHeaders(c, []config.Mailmsg.RawMail)
+//	}
+//}

@@ -22,7 +22,7 @@ import (
 //	return fmt.Sprintf("Bad command target %q", err.targetName)
 //}
 
-func RunCommands(c *imapClient.Client, from string, to string, uid uint32, cmds config.Commands) error {
+func RunCommands(c *imapClient.Client, from string, uid uint32, cmds config.FilterOps) error {
 	var err error
 	uids := []uint32{uid}
 
@@ -30,6 +30,11 @@ func RunCommands(c *imapClient.Client, from string, to string, uid uint32, cmds 
 		if err := mail.MoveMails(c, uids, from, cmds["move"].(string)); err != nil {
 			return err
 		}
+	}
+
+	to := from
+	if cmds["move"] != nil {
+		to = cmds["move"].(string)
 	}
 
 	if cmds["add_flags"] != nil {

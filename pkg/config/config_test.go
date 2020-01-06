@@ -51,7 +51,7 @@ func TestFilterSet_Names(t *testing.T) {
 	// ACTUAL TESTS BELOW
 
 	// load test data
-	cfg, err = cfg.Load("../../test/data/configs/valid/local_imap_server/shops.yaml")
+	cfg, err = cfg.Load("../../test/data/configs/valid/local_imap_server/TestFilterSet_Names")
 	require.Nil(err)
 
 	// test our funcy func

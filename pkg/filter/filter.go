@@ -3,6 +3,7 @@ package filter
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/mail"
+	"github.com/emersion/go-imap"
 	imapClient "github.com/emersion/go-imap/client"
 )
 
@@ -10,22 +11,44 @@ func getUnsortedMails(c *imapClient.Client, inputMailbox config.InputMailbox) ([
 	return mail.SearchAndFetchMails(c, inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
 }
 
-func EvaluateFilterSetOnMails(acc config.Account) (bool, error) {
+func EvaluateFilterSetsOnMails(acc config.Account) (bool, error) {
 
-	mails, err := getUnsortedMails(acc.Connection.Client, *acc.Connection.InputMailbox)
+	var remainingMails []config.Mail
+	msgs, err := getUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
 
-	for _, mail := range mails {
+	for _, msg := range msgs {
 		var matched bool
 		for _, filterSet := range acc.FilterSet {
-			matched, err = ParseRuleSet(filterSet.RuleSet, mail.Headers)
+			matched, err = ParseRuleSet(filterSet.RuleSet, msg.Headers)
+
 			if err != nil {
 				return false, err
 			}
 
 			if matched {
-				return true, err
+				err = RunCommands(acc.Connection.Client, acc.InputMailbox.Mailbox, msg.RawMail.Uid, filterSet.Commands)
+				if err != nil {
+					return true, err //TODO
+				}
 			}
-			//fmt.Println(filterName, matched, mail)
+		}
+
+		if !matched {
+			remainingMails = append(remainingMails, msg)
+		}
+	}
+
+	for _, msg := range remainingMails {
+		if acc.FallbackMailbox == acc.InputMailbox.Mailbox || acc.FallbackMailbox == "" {
+			err = mail.SetMailFlags(acc.Connection.Client, acc.InputMailbox.Mailbox, []uint32{msg.RawMail.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
+			if err != nil {
+				return false, err //TODO
+			}
+		} else {
+			err = mail.MoveMails(acc.Connection.Client, []uint32{msg.RawMail.Uid}, acc.InputMailbox.Mailbox, acc.FallbackMailbox)
+			if err != nil {
+				return false, err //TODO
+			}
 		}
 	}
 

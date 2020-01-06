@@ -77,8 +77,8 @@ func (cfg Config) validate() (Config, error) { //TODO
 			*acc.Connection.TLSVerify = true
 		}
 
-		if acc.Connection.InputMailbox == nil {
-			acc.Connection.InputMailbox = &InputMailbox{Mailbox: "INBOX", WithoutFlags: []string{"\\Seen", "\\Flagged"}}
+		if acc.InputMailbox == nil {
+			acc.InputMailbox = &InputMailbox{Mailbox: "INBOX", WithoutFlags: []string{"\\Seen", "\\Flagged"}}
 		}
 	}
 

@@ -152,6 +152,21 @@ func TestParseRuleSet(t *testing.T) {
 		},
 		{
 			filters: config.FilterSet{
+				"invalid nested value type": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"or": []map[string]interface{}{
+								{"from": []interface{}{"wrong1", "wrong2", "42", []interface{}{config.ConnectionConfig{}}}},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: false,
+			err:           `unsupported value type config.ConnectionConfig`,
+		},
+		{
+			filters: config.FilterSet{
 				"substring comparison with and": config.Filter{
 					RuleSet: config.RuleSet{
 						{
@@ -407,7 +422,7 @@ func TestParseRuleSet(t *testing.T) {
 
 			require.Equal(test.matchExpected, matched, "NATIVE DATA TEST: Test #%v (%q) from ruleParserTests failed! ruleSet=%q testMailHeaders=%q", i+1, filterName, filter.RuleSet, testMailHeaders)
 
-			if filterName == "invalid value type" {
+			if filterName == "invalid value type" || filterName == "invalid nested value type" {
 				// can't test NON-JSON data types in YAML
 				continue
 			}

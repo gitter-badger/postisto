@@ -128,19 +128,31 @@ func parsePatternValues(patternValues interface{}) ([]string, error) {
 	switch v := patternValues.(type) {
 	case string:
 		return append(values, v), nil
-	case []interface{}:
-		for _, val := range v {
-			values = append(values, val.(string))
-		}
-
-		return values, nil
+	case int:
+		return append(values, fmt.Sprintf("%v", v)), nil
+	//case float32:
+	//	return append(values, fmt.Sprintf("%v", v)), nil
+	//case float64:
+	//	return append(values, fmt.Sprintf("%v", v)), nil
+	//case bool:
+	//	return append(values, fmt.Sprintf("%v", v)), nil
 	case []string:
 		for _, val := range v {
 			values = append(values, val)
 		}
+	case []interface{}:
+		for _, val := range v {
+			p, err := parsePatternValues(val)
 
-		return values, nil
+			if err != nil {
+				return values, err
+			}
+
+			values = append(values, p...)
+		}
 	default:
 		return values, fmt.Errorf("unsupported value type %v", reflect.TypeOf(v))
 	}
+
+	return values, nil
 }

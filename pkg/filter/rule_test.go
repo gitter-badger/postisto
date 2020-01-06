@@ -2,6 +2,7 @@ package filter
 
 import (
 	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -133,6 +134,21 @@ func TestParseRuleSet(t *testing.T) {
 			},
 			matchExpected: false,
 			err:           `rule operator "non-existent-op" is unsupported`,
+		},
+		{
+			filters: config.FilterSet{
+				"invalid value type": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"or": []map[string]interface{}{
+								{"from": config.ConnectionConfig{}},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: false,
+			err:           `unsupported value type config.ConnectionConfig`,
 		},
 		{
 			filters: config.FilterSet{
@@ -326,7 +342,7 @@ func TestParseRuleSet(t *testing.T) {
 						{
 							"or": []map[string]interface{}{
 								{"from": "baz"},
-								{"from": []string{"wrong1", "wrong2", "42"}},
+								{"from": []interface{}{"wrong1", "wrong2", "42", 42}},
 							},
 						},
 					},
@@ -378,10 +394,6 @@ func TestParseRuleSet(t *testing.T) {
 	require.NotNil(acc)
 
 	for i, test := range ruleParserTests {
-		//var yml, _ = yaml.Marshal(test.filters)
-		//fmt.Println(string(yml))
-		//assert.Fail(t, "show yaml")
-
 		for filterName, filter := range test.filters {
 
 			// Test with native synthetic test data
@@ -395,9 +407,15 @@ func TestParseRuleSet(t *testing.T) {
 
 			require.Equal(test.matchExpected, matched, "NATIVE DATA TEST: Test #%v (%q) from ruleParserTests failed! ruleSet=%q testMailHeaders=%q", i+1, filterName, filter.RuleSet, testMailHeaders)
 
-			//continue
+			if filterName == "invalid value type" {
+				// can't test NON-JSON data types in YAML
+				continue
+			}
+
 			// Test with same synthetic ruleSet test data from YAML
-			require.Contains(acc.FilterSet.Names(), filterName, "Add test %q to TestParserRuleSet.yml!", filterName)
+			yml, err := yaml.Marshal(test.filters)
+			require.Contains(acc.FilterSet.Names(), filterName, "Add test %q to TestParserRuleSet.yml:\n=========\n%v=========\n%v", filterName, string(yml), err)
+
 			ymlFilter := acc.FilterSet[filterName]
 			require.NotNil(ymlFilter)
 			require.NotNil(ymlFilter.RuleSet)

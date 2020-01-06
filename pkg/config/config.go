@@ -62,7 +62,7 @@ func (cfg Config) Load(configPath string) (Config, error) {
 	return cfg.validate()
 }
 
-func (cfg Config) validate() (Config, error) {
+func (cfg Config) validate() (Config, error) { //TODO
 
 	// Accounts
 	for i := range cfg.Accounts {

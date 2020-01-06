@@ -41,6 +41,13 @@ accounts:
           - from: you
           - to: you
 
+      failing and comparison:
+        commands: {}
+        rules:
+        - and:
+          - from: you
+          - to: you
+
       failing with unsupported op:
         commands: {}
         rules:
@@ -107,7 +114,7 @@ accounts:
       comparison with bad regex (and):
         commands: {}
         rules:
-        - or:
+        - and:
           - to: "!^\\ü^@example.com"
 
       comparison with bad regex (or):

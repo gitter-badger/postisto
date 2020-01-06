@@ -321,6 +321,7 @@ func TestParseRuleSet(t *testing.T) {
 	for i, test := range ruleParserTests {
 		//yml, _ := yaml.Marshal(test.filters)
 		//fmt.Println(string(yml))
+		//assert.Fail(t, "show yaml")
 
 		for filterName, filter := range test.filters {
 

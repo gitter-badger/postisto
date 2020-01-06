@@ -20,8 +20,8 @@ type Config struct {
 }
 
 type Account struct {
-	Connection ConnectionConfig  `yaml:"connection"`
-	Filters    map[string]Filter `yaml:"filters"`
+	Connection ConnectionConfig `yaml:"connection"`
+	Filters    FilterSet        `yaml:"filters"`
 }
 
 type ConnectionConfig struct {
@@ -38,6 +38,20 @@ type ConnectionConfig struct {
 	TLSCACertFile   string             `yaml:"cacertfile"`
 	Client          *imapClient.Client //TODO custom type?
 	Debug           bool               `yaml:"debug"` //TODO => use with log setting/level!
+}
+
+type FilterSet map[string]Filter
+
+func (filterSet FilterSet) Names() []string {
+	keys := make([]string, len(filterSet))
+
+	var i uint64
+	for key, _ := range filterSet {
+		keys[i] = key
+		i++
+	}
+
+	return keys
 }
 
 type Filter struct {

@@ -17,15 +17,24 @@ func (err *UnknownCommandTypeError) Error() string {
 	return fmt.Sprintf("Rule operator %q is unsupported", err.opName)
 }
 
-func ParseRuleSet(ruleSet config.RuleSet) error {
+func ParseRuleSet(ruleSet config.RuleSet, headers MailHeaders) (bool, error) {
 	var err error
 
-	fmt.Println(ruleSet)
+	for _, rule := range ruleSet {
+		matched, err := parseRule(rule, headers)
+		if err != nil {
+			return false, err
+		}
 
-	return err
+		if matched {
+			return true, err
+		}
+	}
+
+	return false, err
 }
 
-func ParseRule(rule config.Rule, headers MailHeaders) (bool, error) {
+func parseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 	var err error
 
 	for op, patterns := range rule {
@@ -35,25 +44,6 @@ func ParseRule(rule config.Rule, headers MailHeaders) (bool, error) {
 		case "or":
 			for _, pattern := range patterns {
 				for patternHeaderName, patternValue := range pattern {
-					//if patternHeaderName == "and" || patternHeaderName == "or" {
-					//	if matched, err := ParseRule(patternValue, headers); err != nil {
-					//		return false, err
-					//	} else if matched {
-					//		return true, err
-					//	}
-					//}
-					//fmt.Println(patternValue, "=d=", headers[patternHeaderName])
-
-					//switch p := patternValue.(type) {
-					//case []map[string]interface{}:
-					//	fmt.Println("straight")
-					//	if matched, err := ParseRule(p, headers); err != nil {
-					//		return false, err
-					//	} else if matched {
-					//		return true, err
-					//	}
-					//case string:
-					//fmt.Println(patternValue, "=s=", headers[patternHeaderName])
 					matched, err := checkMatch(patternValue.(string), headers[patternHeaderName])
 					if err != nil {
 						return false, err

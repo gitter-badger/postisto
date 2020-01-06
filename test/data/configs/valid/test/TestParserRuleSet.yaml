@@ -1,0 +1,137 @@
+accounts:
+  test:
+    filters:
+      simple 1o1 comparison:
+        commands: {}
+        rules:
+        - or:
+          - from: foo@example.com
+
+      simple 101 comparison in or:
+        commands: {}
+        rules:
+        - or:
+          - from: oO
+          - from: foo@example.com
+
+      failing simple comparison:
+        commands: {}
+        rules:
+        - or:
+          - from: wrong value
+
+      comparison with uppercase text:
+        commands: {}
+        rules:
+        - and:
+          - from: foo@example.com
+          - to: me@EXAMPLE.com
+
+      failing and comparison:
+        commands: {}
+        rules:
+        - and:
+          - from: you
+          - to: you
+
+      failing or comparison:
+        commands: {}
+        rules:
+        - or:
+          - from: you
+          - to: you
+
+      failing with unsupported op:
+        commands: {}
+        rules:
+        - non-existent-op:
+          - from: you
+          - to: you
+
+      substring comparison with and:
+        commands: {}
+        rules:
+        - and:
+          - from: @example.com
+
+      substring comparison with or:
+        commands: {}
+        rules:
+        - or:
+          - from: @example.com
+
+      failing on search for empty header:
+        commands: {}
+        rules:
+        - and:
+          - from: ""
+
+      successfully searching for empty header:
+        commands: {}
+        rules:
+        - and:
+          - empty-header: ""
+
+      testing with ütf-8:
+        commands: {}
+        rules:
+        - and:
+          - subject: löv
+
+      uppercase in rule + substring comparison:
+        commands: {}
+        rules:
+        - and:
+          - from: @EXAMPLE.COM
+
+      uppercase in header comparison:
+        commands: {}
+        rules:
+        - and:
+          - to: @example.com
+
+      regex comparison:
+        commands: {}
+        rules:
+        - and:
+          - subject: löve$
+          - subject: ^with löve$
+          - subject: ^wit.*ve$
+          - subject: "^with\s+löve$"
+          - subject: ^.*$
+          - subject: .*
+          - subject: "^with\s+l(ö|ä)ve$"
+          - subject: "^with\s+l(?:ö|ä)ve$"
+          - subject: ^WITH
+
+      comparison with bad regex (and):
+        commands: {}
+        rules:
+        - or:
+          - to: "!^\\ü^@example.com"
+
+      comparison with bad regex (or):
+        commands: {}
+        rules:
+        - or:
+          - to: "!^\\ü^@example.com"
+
+      several rules in ruleSet success:
+        commands: {}
+        rules:
+        - and:
+          - to: @example.com
+        - or:
+          - subject: löv
+        - and:
+          - from: ""
+
+      several rules in ruleSet failing:
+        commands: {}
+        rules:
+        - and:
+          - to: @examplde.com
+        - or:
+          - subject: löasdv
+        - and:
+          - from: ""

@@ -82,7 +82,7 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.M
 	}
 
 	for imapMessage := range imapMessages {
-		parsedHeaders, err := ParseMailHeaders(imapMessage)
+		parsedHeaders, err := parseMailHeaders(imapMessage)
 		if err != nil {
 			return fetchedMails, err
 		}
@@ -234,7 +234,7 @@ func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) erro
 	return err
 }
 
-func ParseMailHeaders(rawMessage *imap.Message) (config.MailHeaders, error) { //make private?
+func parseMailHeaders(rawMessage *imap.Message) (config.MailHeaders, error) { //make private?
 	headers := config.MailHeaders{}
 	var err error
 

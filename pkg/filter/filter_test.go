@@ -37,18 +37,66 @@ func TestGetUnsortedMails(t *testing.T) {
 func TestEvaluateFilterSetsOnMails(t *testing.T) {
 	require := require.New(t)
 
+	type targetStruct struct {
+		name string
+		num  int
+	}
 	type parserTest struct {
-		source    string
-		sourceNum int
-		target    string
-		targetNum int
+		source          string
+		sourceRemaining int
+		mailsToUpload   []int
+		targets         []targetStruct
 	}
 	tests := []parserTest{
 		{
-			source:    "INBOX",
-			sourceNum: 14,
-			target:    "MyTarget",
-			targetNum: 3,
+			source:          "INBOX",
+			sourceRemaining: 1,
+			mailsToUpload:   []int{1, 2, 3, 4},
+			targets: []targetStruct{
+				{name: "MyTarget", num: 3},
+			},
+		},
+		{
+			source:        "INBOX",
+			mailsToUpload: []int{1, 2, 3, 4},
+			targets: []targetStruct{
+				{name: "MyTarget", num: 3},
+				{name: "MailFilterTest-TestAND", num: 1},
+			},
+		},
+		{
+			source:        "INBOX",
+			mailsToUpload: []int{1, 2, 3, 4},
+			targets: []targetStruct{
+				{name: "MyTarget", num: 3},
+				{name: "MailFilterTest-TestRegex", num: 1},
+			},
+		},
+		{
+			source:        "INBOX",
+			mailsToUpload: []int{1, 2, 3, 8, 9, 14},
+			targets: []targetStruct{
+				{name: "MyTarget", num: 3},
+				{name: "MailFilterTest-TestMisc", num: 3},
+			},
+		},
+		{
+			source:        "INBOX",
+			mailsToUpload: []int{1, 2, 3, 13, 15, 16, 17},
+			targets: []targetStruct{
+				{name: "MyTarget", num: 3},
+				{name: "MailFilterTest-TestUnicodeFrom-梦龙周", num: 3},
+				{name: "MailFilterTest-TestUnicodeSubject", num: 1},
+			},
+		},
+		{
+			source:        "INBOX",
+			mailsToUpload: []int{1, 2, 3, 16, 17},
+			targets: []targetStruct{
+				{name: "MyTarget", num: 3},
+				{name: "MailFilterTest-16", num: 1},
+				{name: "MailFilterTest-17", num: 1},
+			},
 		},
 	}
 
@@ -67,28 +115,32 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		require.Nil(err)
 
 		// Simulate new unsorted mails by uploading
-		for mailNum := 1; mailNum <= integration.MaxTestMailCount; mailNum++ {
+		for _, mailNum := range test.mailsToUpload {
 			require.Nil(mail.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), "INBOX", []string{}))
 		}
 
+		debugInfo := map[string]string{"username": acc.Connection.Username, "testNum": fmt.Sprint(testNum + 1)}
+
+		// ACTUAL TESTS BELOW
+
+		// Baaaam
 		_, err = EvaluateFilterSetsOnMails(*acc)
-		//require.True(matched)
 		require.Nil(err)
 
 		// Verify Source
 		fetchedMails, err := mail.SearchMails(acc.Connection.Client, test.source, nil, nil)
-		require.Nil(err)
-		require.Equal(test.sourceNum, len(fetchedMails))
+		require.Nil(err, debugInfo)
+		//require.Equal(test.sourceNum, len(remainingMails))
+		require.Equal(test.sourceRemaining, len(fetchedMails), "Unexpected num of mails in source %v", test.source, debugInfo)
 
-		// Verify Target
-		fetchedMails, err = mail.SearchMails(acc.Connection.Client, test.target, nil, nil)
-		require.Nil(err)
-		require.Equal(test.targetNum, len(fetchedMails))
+		// Verify Targets
+		for _, target := range test.targets {
+			fetchedMails, err := mail.SearchMails(acc.Connection.Client, target.name, nil, nil)
+			require.Nil(err, debugInfo)
+			require.Equal(target.num, len(fetchedMails), "Unexpected num of mails in target %v", target.name, debugInfo)
+		}
 
 		// Disconnect - Hoooraaay!
 		require.Nil(conn.Disconnect(acc.Connection.Client))
-		break
 	}
-
-	//require.Fail("oOoOo")
 }

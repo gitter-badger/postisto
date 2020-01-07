@@ -238,11 +238,11 @@ func parseMailHeaders(rawMessage *imap.Message) (config.MailHeaders, error) { //
 	headers := config.MailHeaders{}
 	var err error
 
+	// Create for mail parsing
 	var section imap.BodySectionName
 	section.Specifier = imap.HeaderSpecifier // Loads all headers only (no body)
 
 	msgBody := rawMessage.GetBody(&section)
-
 	if msgBody == nil {
 		return headers, fmt.Errorf("server didn't returned message body for mail")
 	}
@@ -252,38 +252,50 @@ func parseMailHeaders(rawMessage *imap.Message) (config.MailHeaders, error) { //
 		return headers, err
 	}
 
-	fields := mr.Header.Fields()
-	//fields := m.Header.FieldsByKey("received")
+	// Address Lists in headers
+	addrFields := []string{"from", "to", "cc", "reply-to"}
+	for _, fieldName := range addrFields {
+		parsedList, err := parseAddrList(mr, fieldName, mr.Header.Get(fieldName))
 
-	addrFields := []string{"from", "to", "cc"}
-	for _, field := range addrFields {
-		addrs, err := mr.Header.AddressList(field)
-		if err != nil && err.Error() != "mail: missing '@' or angle-addr" { //ignore bad formated addrs
-			return headers, err
-		}
-
-		for _, addr := range addrs {
-			if headers[field] != "" {
-				headers[field] += ", "
-			}
-			headers[field] += strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v <%v>", addr.Name, addr.Address)))
+		if err != nil {
+			return nil, err
+		} else {
+			headers[fieldName] = parsedList
 		}
 	}
 
+	// Some other standard envelope headers
 	headers["subject"] = strings.ToLower(fmt.Sprintf("%v", rawMessage.Envelope.Subject))
 	headers["date"] = strings.ToLower(fmt.Sprintf("%v", rawMessage.Envelope.Date))
-	headers["reply-to"] = strings.ToLower(fmt.Sprintf("%v", rawMessage.Envelope.ReplyTo))
 	headers["message-id"] = strings.ToLower(fmt.Sprintf("%v", rawMessage.Envelope.MessageId))
 
+	// All the other headers
+	alreadyHandled := []string{"subject", "date", "message-id"}
+	alreadyHandled = append(alreadyHandled, addrFields...)
+	fields := mr.Header.Fields()
 	for {
 		next := fields.Next()
 		if !next {
 			break
 		}
 
-		if headers[strings.ToLower(fields.Key())] == "" { //TODO support received?
-			//fmt.Println("schreibne", fields.Key())
-			headers[strings.ToLower(fields.Key())] = strings.ToLower(fields.Value())
+		fieldName := strings.ToLower(fields.Key())
+		fieldValue := strings.ToLower(fields.Value())
+
+		if contains(alreadyHandled, fieldName) {
+			// we maintain these headers elsewhere
+			continue
+		}
+
+		switch val := headers[fieldName].(type) {
+		case nil:
+			// detected new header
+			headers[fieldName] = fieldValue
+		case string:
+			headerList := []string{val, fieldValue}
+			headers[fieldName] = headerList
+		case []string:
+			headers[fieldName] = append(val, fieldValue)
 		}
 	}
 
@@ -312,4 +324,44 @@ func parseMailHeaders(rawMessage *imap.Message) (config.MailHeaders, error) { //
 	*/
 
 	return headers, err
+}
+
+func parseAddrList(mr *mailUtil.Reader, fieldName string, fallback string) (string, error) {
+	var fieldValue string
+	addrs, err := mr.Header.AddressList(fieldName)
+
+	if addrs == nil {
+		//fmt.Println("yo", fieldName)
+		// parsing failed, so return own or externally set fallback
+		f := mr.Header.FieldsByKey(fieldName)
+		if !f.Next() {
+			return "", err
+		} else {
+			return fallback, nil
+		}
+	}
+
+	if err != nil && err.Error() != "mail: missing '@' or angle-addr" { //ignore bad formated addrs
+		// oh, real error
+		return "", err
+	}
+
+	for _, addr := range addrs {
+		formattedAddr := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v <%v>", addr.Name, addr.Address)))
+		if fieldValue != "" {
+			fieldValue += ", "
+		}
+		fieldValue += formattedAddr
+	}
+
+	return fieldValue, err
+}
+
+func contains(s []string, e string) bool { //TODO
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

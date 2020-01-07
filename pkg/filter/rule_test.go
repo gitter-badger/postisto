@@ -262,7 +262,7 @@ func TestParseRuleSet(t *testing.T) {
 								{"subject": "^.*$"},
 								{"subject": ".*"},
 								{"subject": "^with\\s+l(ö|ä)ve$"},
-								{"subject": "^with\\s+l(?:ö|ä)ve$"},
+								{"suBject": "^with\\s+l(?:ö|ä)ve$"},
 								{"subject": "^WITH"},
 							},
 						},
@@ -276,7 +276,7 @@ func TestParseRuleSet(t *testing.T) {
 				"comparison with bad regex (and)": config.Filter{
 					RuleSet: config.RuleSet{
 						{
-							"and": []map[string]interface{}{{"to": "!^\\ü^@example.com"}},
+							"and": []map[string]interface{}{{"tO": "!^\\ü^@example.com"}},
 						},
 					},
 				},
@@ -314,7 +314,7 @@ func TestParseRuleSet(t *testing.T) {
 				"several rules in ruleSet failing": config.Filter{
 					RuleSet: config.RuleSet{
 						{"and": []map[string]interface{}{{"to": "@examplde.com"}}},
-						{"or": []map[string]interface{}{{"subject": "löasdv"}}},
+						{"or": []map[string]interface{}{{"sUbject": "löasdv"}}},
 						{"and": []map[string]interface{}{{"from": ""}}},
 					},
 				},
@@ -327,7 +327,7 @@ func TestParseRuleSet(t *testing.T) {
 					RuleSet: config.RuleSet{
 						{
 							"or": []map[string]interface{}{
-								{"from": []string{"foo@example.com", "example.com", "foo"}},
+								{"froM": []string{"foo@example.com", "example.com", "foo"}},
 							},
 						},
 					},
@@ -341,7 +341,7 @@ func TestParseRuleSet(t *testing.T) {
 					RuleSet: config.RuleSet{
 						{
 							"or": []map[string]interface{}{
-								{"from": "oO"},
+								{"froM": "oO"},
 								{"from": []string{"foo@example.com", "example.com", "foo"}},
 							},
 						},
@@ -356,7 +356,7 @@ func TestParseRuleSet(t *testing.T) {
 					RuleSet: config.RuleSet{
 						{
 							"or": []map[string]interface{}{
-								{"from": "baz"},
+								{"From": "baz"},
 								{"from": []interface{}{"wrong1", "wrong2", "42", 42}},
 							},
 						},
@@ -399,7 +399,7 @@ func TestParseRuleSet(t *testing.T) {
 		//},
 	}
 
-	testMailHeaders := config.MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": ""}
+	testMailHeaders := config.MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": "", "custom-Header": "Foobar"}
 
 	cfg := config.NewConfig()
 	cfg, err := cfg.Load("../../test/data/configs/valid/test/TestParserRuleSet.yaml")

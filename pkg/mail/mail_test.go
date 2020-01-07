@@ -192,6 +192,7 @@ func TestDeleteMails(t *testing.T) {
 
 	// Delete one mail
 	err = DeleteMails(acc.Connection.Client, "does-not-exist", []uint32{fetchedMails[0].RawMail.Uid}, true) // mailbox doesn't exist, can't be deleted
+	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: does-not-exist"))
 
 	err = DeleteMails(acc.Connection.Client, "INBOX", []uint32{fetchedMails[1].RawMail.Uid}, false) // not moved yet, flag, don't expunge yet
@@ -235,10 +236,11 @@ func TestParseMailHeaders(t *testing.T) {
 
 	// Verify parsed fields (header)
 	parserTests := []struct {
-		from    string
-		to      string
-		subject string
-		date    string
+		from     string
+		to       string
+		subject  string
+		date     string
+		received []string
 	}{
 		{ // #1
 			from:    `youth4work <admin@youth4work.com>`,
@@ -264,6 +266,11 @@ func TestParseMailHeaders(t *testing.T) {
 			from:    `invalid-address`,
 			to:      `"mr. ütf-8" <foo@bar.net>`,
 			subject: "ütf-8 💩",
+			received: []string{
+				strings.ToLower("from mail-storage-2.main-hosting.eu by mail-storage-2 (Dovecot) with LMTP id Dab9NZICjVWyQAAA7jq/7w for <shubham@cyberzonec.in>; Fri, 26 Jun 2015 07:43:20 +0000"),
+				strings.ToLower("from mx2.main-hosting.eu (mx-mailgw [10.0.25.254]) by mail-storage-2.main-hosting.eu (Postfix) with ESMTP id 984D62096064 for <shubham@cyberzonec.in>; Fri, 26 Jun 2015 07:43:20 +0000 (UTC)"),
+				strings.ToLower("from a10-20.smtp-out.amazonses.com (a10-20.smtp-out.amazonses.com [54.240.10.20]) by mx2.main-hosting.eu ([Main-Hosting.eu Mail System]) with ESMTPS id 4AF912D695A for <shubham@cyberzonec.in>; Fri, 26 Jun 2015 07:43:20 +0000 (UTC)"),
+			},
 		},
 	}
 
@@ -274,9 +281,10 @@ func TestParseMailHeaders(t *testing.T) {
 		require.Equal(parserTests[i].subject, fetchedMails[i].Headers["subject"], "Failed in test #%v (SUBJECT)", i+1)
 	}
 
-	// Exciting custom headers
+	// Exciting custom headers in #5
 	require.Equal("<0000014e2ed21bf8-035d1578-a0ac-4afe-a3cb-ea4e65b92143-000000@email.amazonses.com>", fetchedMails[4].Headers["message-id"])
 	require.Equal("<http://emailsparrow.com/unsubscribe.php?m=2392014&c=6508a8072980153786bbab4969679c2a&l=19&n=57154>", fetchedMails[4].Headers["list-unsubscribe"])
 	require.Equal("2392014", fetchedMails[4].Headers["x-mailer-recptid"])
 	require.Equal("foo <a@b.c>, baz <d@e.f>", fetchedMails[4].Headers["cc"])
+	require.ElementsMatch(parserTests[4].received, fetchedMails[4].Headers["received"])
 }

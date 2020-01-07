@@ -11,3 +11,12 @@ accounts:
           - and:
             - from:
               - @youth4work.com
+      test_and:
+        commands:
+          move: MailFilterTest-TestAND
+        rules:
+          - and:
+            - from:
+              - BigRock.com Sales Team
+            - delivered-to:
+              - cyberzonec.in

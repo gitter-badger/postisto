@@ -8,7 +8,6 @@ import (
 	imapClient "github.com/emersion/go-imap/client"
 
 	"io/ioutil"
-	"os"
 )
 
 func Connect(connConfig config.ConnectionConfig) (*imapClient.Client, error) {
@@ -55,7 +54,7 @@ func Connect(connConfig config.ConnectionConfig) (*imapClient.Client, error) {
 	}
 
 	if true { //TODO
-		c.SetDebug(os.Stderr)
+		//c.SetDebug(os.Stderr)
 	}
 
 	if err = c.Login(connConfig.Username, connConfig.Password); err != nil {

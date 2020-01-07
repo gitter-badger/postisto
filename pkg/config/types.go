@@ -70,7 +70,7 @@ type Mail struct {
 	RawMail *imap.Message
 	Headers MailHeaders
 }
-type MailHeaders map[string]string
+type MailHeaders map[string]interface{}
 
 func NewMail(rawMail *imap.Message, headers MailHeaders) Mail {
 	return Mail{RawMail: rawMail, Headers: headers}

@@ -38,7 +38,7 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
 		},
-		Debug: true,
+		Debug: false,
 	}
 
 	redisClient, err := newRedisClient()
@@ -60,7 +60,7 @@ func NewUsername(u string) string {
 	}
 
 	r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return fmt.Sprintf("test-%v@example.com", r1.Intn(100000))
+	return fmt.Sprintf("test-%v@example.com", r1.Intn(1000000)) //TODO that's not random enough
 }
 
 func newIMAPUser(acc *config.Account, redisClient *redis.Client) error {

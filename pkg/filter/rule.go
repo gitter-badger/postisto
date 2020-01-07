@@ -32,11 +32,17 @@ func parseRule(rule config.Rule, headers config.MailHeaders) (bool, error) {
 	for op, patterns := range rule {
 		op = strings.ToLower(op)
 
-		//fmt.Println("new", rule)
+		//fmt.Printf("parseRule: %v >>>>> %v\n", rule, headers)
 		switch op {
 		case "or":
 			for _, pattern := range patterns {
 				for patternHeaderName, patternValues := range pattern {
+					patternHeaderName := strings.ToLower(patternHeaderName) //TODO use custom method
+
+					if _, keyInMap := headers[patternHeaderName]; !keyInMap {
+						continue
+					}
+
 					if matched, err := checkRulePattern(patternValues, headers[patternHeaderName]); err != nil {
 						return false, err
 					} else if matched {
@@ -47,6 +53,12 @@ func parseRule(rule config.Rule, headers config.MailHeaders) (bool, error) {
 		case "and":
 			for _, pattern := range patterns {
 				for patternHeaderName, patternValues := range pattern {
+					patternHeaderName := strings.ToLower(patternHeaderName) //TODO use custom method
+
+					if _, keyInMap := headers[patternHeaderName]; !keyInMap {
+						continue
+					}
+
 					if matched, err := checkRulePattern(patternValues, headers[patternHeaderName]); err != nil {
 						return false, err
 					} else if !matched {
@@ -64,21 +76,34 @@ func parseRule(rule config.Rule, headers config.MailHeaders) (bool, error) {
 	return false, err
 }
 
-func checkRulePattern(patternValues interface{}, header string) (bool, error) {
+func checkRulePattern(patternValues interface{}, headers interface{}) (bool, error) {
 	parsedValues, err := parsePatternValues(patternValues)
 	if err != nil {
 		return false, err
 	}
 
-	//fmt.Println("Values:", parsedValues)
+	//fmt.Println("Check pattern:", parsedValues)
 	for _, patternValue := range parsedValues {
-		matched, err := checkMatch(patternValue, header)
-		if err != nil {
-			return false, err
+		var headerList []string
+
+		switch h := headers.(type) {
+		case string:
+			headerList = append(headerList, h)
+		case []string:
+			headerList = h
+		default:
+			return false, fmt.Errorf("unsupported header type %q", reflect.TypeOf(headers))
 		}
 
-		if matched {
-			return true, nil
+		for _, header := range headerList {
+			matched, err := checkMatch(patternValue, header)
+			if err != nil {
+				return false, err
+			}
+
+			if matched {
+				return true, nil
+			}
 		}
 	}
 
@@ -86,11 +111,11 @@ func checkRulePattern(patternValues interface{}, header string) (bool, error) {
 }
 
 func checkMatch(pattern string, s string) (bool, error) {
-	pattern = strings.ToLower(pattern)
+	patternLowered := strings.ToLower(pattern)
 	s = strings.ToLower(s)
 	var err error
 
-	//fmt.Printf("Comparing %v with %v\n", pattern, s)
+	//fmt.Printf("%q == %q\n", pattern, s)
 
 	if pattern == "" && s == "" {
 		return true, err
@@ -100,15 +125,15 @@ func checkMatch(pattern string, s string) (bool, error) {
 		return false, err
 	}
 
-	if pattern == s {
+	if patternLowered == s {
 		return true, err
 	}
 
-	if strings.Contains(s, pattern) {
+	if strings.Contains(s, patternLowered) {
 		return true, err
 	}
 
-	regEx, err := regexp.Compile(pattern)
+	regEx, err := regexp.Compile(fmt.Sprintf("(?i)%v", pattern))
 	if err != nil {
 		return false, err
 	}

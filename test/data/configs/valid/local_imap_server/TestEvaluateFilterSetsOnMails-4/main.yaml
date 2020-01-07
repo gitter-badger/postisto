@@ -1,0 +1,24 @@
+# vim: ts=2 sw=2 et
+
+accounts:
+  local_imap_server:
+    connection: {}
+    filters:
+      main:
+        commands:
+          move: MyTarget
+        rules:
+          - and:
+            - from:
+              - @youth4work.com
+      tes_misc:
+        commands:
+          move: MailFilterTest-TestMisc
+        rules:
+          - or:
+            - list-id:
+              - ^.*$ # Match if List-ID exists
+            - reply-to:
+              - news.websummit.net
+            - X-Received:
+              - 10.52.3.166

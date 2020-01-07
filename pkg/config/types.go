@@ -21,7 +21,7 @@ func NewConfig() Config {
 type Account struct {
 	Connection      ConnectionConfig `yaml:"connection"`
 	InputMailbox    *InputMailbox    `yaml:"input"`
-	FallbackMailbox string           `yaml:"fallback_mailbox"`
+	FallbackMailbox *string          `yaml:"fallback_mailbox"`
 	FilterSet       FilterSet        `yaml:"filters"`
 	Debug           bool             `yaml:"debug"` //TODO => use with log setting/level!
 }

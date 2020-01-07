@@ -154,6 +154,7 @@ func TestMoveMails(t *testing.T) {
 	require.Nil(err)
 
 	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[3].RawMail.Uid}, "wrong-source", "MyTarget!!!")
+	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: wrong-source"))
 
 	err = MoveMails(acc.Connection.Client, []uint32{fetchedMails[4].RawMail.Uid}, "INBOX", "ütf-8 & 梦龙周")

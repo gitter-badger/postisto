@@ -181,3 +181,10 @@ accounts:
             - foo@example.com
             - example.com
             - foo
+
+      weirdest bug so far:
+        commands: {}
+        rules:
+        - and:
+          - X-Custom-Mail-Id: "16"
+          - X-Notes-Item: CSMemoFrom

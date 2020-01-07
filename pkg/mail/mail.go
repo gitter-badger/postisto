@@ -28,15 +28,19 @@ func UploadMails(c *imapClient.Client, file string, mailbox string, flags []stri
 		return err
 	}
 
+	// Select mailbox
+	if _, err = Select(c, mailbox, false, true); err != nil {
+		return err
+	}
+
 	return c.Append(mailbox, flags, time.Now(), msg)
 }
 
 func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
 
 	// Select mailbox
-	_, err := c.Select(mailbox, true)
-	if err != nil {
-		return []uint32{}, err
+	if _, err := Select(c, mailbox, true, false); err != nil {
+		return nil, err
 	}
 
 	// Define search criteria
@@ -55,8 +59,7 @@ func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, witho
 func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.Mail, error) {
 
 	// Select mailbox
-	_, err := c.Select(mailbox, true)
-	if err != nil {
+	if _, err := Select(c, mailbox, true, false); err != nil {
 		return nil, err
 	}
 
@@ -77,14 +80,15 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.M
 		done <- c.UidFetch(&seqset, items, imapMessages)
 	}()
 
+	var err error
 	if err = <-done; err != nil {
-		return fetchedMails, err
+		return nil, err
 	}
 
 	for imapMessage := range imapMessages {
 		parsedHeaders, err := parseMailHeaders(imapMessage)
 		if err != nil {
-			return fetchedMails, err
+			return nil, err
 		}
 		fetchedMails = append(fetchedMails, config.NewMail(imapMessage, parsedHeaders))
 	}
@@ -108,7 +112,8 @@ func DeleteMails(c *imapClient.Client, mailbox string, uids []uint32, expunge bo
 
 func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp string, flags []interface{}, expunge bool) error {
 
-	if _, err := c.Select(mailbox, false); err != nil {
+	// Select mailbox
+	if _, err := Select(c, mailbox, false, false); err != nil {
 		return err
 	}
 
@@ -134,8 +139,9 @@ func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, e
 	var flags []string
 	var err error
 
-	if _, err := c.Select(mailbox, false); err != nil {
-		return flags, err
+	// Select mailbox
+	if _, err := Select(c, mailbox, true, false); err != nil {
+		return nil, err
 	}
 
 	seqset := imap.SeqSet{}
@@ -150,7 +156,7 @@ func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, e
 	}()
 
 	if err = <-done; err != nil {
-		return flags, err
+		return nil, err
 	}
 
 	for msg := range imapMessages {
@@ -212,7 +218,8 @@ func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) erro
 		seqset.AddNum(uid)
 	}
 
-	if _, err := c.Select(from, false); err != nil {
+	// Select mailbox
+	if _, err := Select(c, from, false, false); err != nil {
 		return err
 	}
 
@@ -364,4 +371,29 @@ func contains(s []string, e string) bool { //TODO
 		}
 	}
 	return false
+}
+
+func Select(c *imapClient.Client, mailbox string, readOnly bool, autoCreate bool) (*imap.MailboxStatus, error) {
+	status, err := c.Select(mailbox, readOnly)
+
+	if err == nil {
+		return status, err
+	}
+
+	// Select Failed, autocreate?
+	if !autoCreate {
+		return status, err
+	}
+
+	// Yes create and try SELECT again!
+	if strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) {
+		// SELECT failed because the target to did not exist. Create it and try again.
+		if err = CreateMailbox(c, mailbox); err != nil {
+			return nil, err
+		}
+
+		return Select(c, mailbox, readOnly, false)
+	}
+
+	return status, err
 }

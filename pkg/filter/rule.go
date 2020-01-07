@@ -51,11 +51,13 @@ func parseRule(rule config.Rule, headers config.MailHeaders) (bool, error) {
 				}
 			}
 		case "and":
+			var patternMatched bool
 			for _, pattern := range patterns {
 				for patternHeaderName, patternValues := range pattern {
 					patternHeaderName := strings.ToLower(patternHeaderName) //TODO use custom method
 
 					if _, keyInMap := headers[patternHeaderName]; !keyInMap {
+						patternMatched = false
 						continue
 					}
 
@@ -63,11 +65,13 @@ func parseRule(rule config.Rule, headers config.MailHeaders) (bool, error) {
 						return false, err
 					} else if !matched {
 						return false, nil
+					} else if matched {
+						patternMatched = true
 					}
 				}
 			}
 
-			return true, nil
+			return patternMatched, nil
 		default:
 			return false, fmt.Errorf("rule operator %q is unsupported", op)
 		}
@@ -82,7 +86,6 @@ func checkRulePattern(patternValues interface{}, headers interface{}) (bool, err
 		return false, err
 	}
 
-	//fmt.Println("Check pattern:", parsedValues)
 	for _, patternValue := range parsedValues {
 		var headerList []string
 

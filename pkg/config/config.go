@@ -80,6 +80,11 @@ func (cfg Config) validate() (Config, error) { //TODO
 		if acc.InputMailbox == nil {
 			acc.InputMailbox = &InputMailbox{Mailbox: "INBOX", WithoutFlags: []string{"\\Seen", "\\Flagged"}}
 		}
+
+		if acc.FallbackMailbox == nil {
+			fallback := "INBOX"
+			acc.FallbackMailbox = &fallback
+		}
 	}
 
 	// Filters

@@ -380,6 +380,21 @@ func TestParseRuleSet(t *testing.T) {
 			},
 			matchExpected: false,
 		},
+		{
+			filters: config.FilterSet{
+				"weirdest bug so far": config.Filter{
+					RuleSet: config.RuleSet{
+						{
+							"and": []map[string]interface{}{
+								{"X-Custom-Mail-Id": "16"},
+								{"X-Notes-Item": "CSMemoFrom"},
+							},
+						},
+					},
+				},
+			},
+			matchExpected: false,
+		},
 
 		//{
 		//	headers: MailHeaders{"from": "oO"},
@@ -410,7 +425,6 @@ func TestParseRuleSet(t *testing.T) {
 
 	for i, test := range ruleParserTests {
 		for filterName, filter := range test.filters {
-
 			// Test with native synthetic test data
 			matched, err := ParseRuleSet(filter.RuleSet, testMailHeaders)
 			if test.err == "" {

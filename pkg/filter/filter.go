@@ -39,13 +39,13 @@ func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
 	}
 
 	for _, msg := range remainingMails {
-		if acc.FallbackMailbox == acc.InputMailbox.Mailbox || acc.FallbackMailbox == "" {
+		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
 			err = mail.SetMailFlags(acc.Connection.Client, acc.InputMailbox.Mailbox, []uint32{msg.RawMail.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
 			if err != nil {
 				return nil, err //TODO
 			}
 		} else {
-			err = mail.MoveMails(acc.Connection.Client, []uint32{msg.RawMail.Uid}, acc.InputMailbox.Mailbox, acc.FallbackMailbox)
+			err = mail.MoveMails(acc.Connection.Client, []uint32{msg.RawMail.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox)
 			if err != nil {
 				return nil, err //TODO
 			}

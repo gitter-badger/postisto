@@ -1,0 +1,34 @@
+# vim: ts=2 sw=2 et
+
+accounts:
+  local_imap_server:
+    connection: {}
+    input:
+      mailbox: PreInbox
+    filters:
+# Send these 3 mails to INBOX
+#      main:
+#        commands:
+#          move: MyTarget
+#        rules:
+#          - and:
+#            - from:
+#              - @youth4work.com
+      test_mail16:
+        commands:
+          move: MailFilterTest-16
+        rules:
+          - and:
+            - X-Custom-Mail-Id:
+              - '16'
+            - X-Notes-Item:
+              - CSMemoFrom
+      test_mail17:
+        commands:
+          move: MailFilterTest-17
+        rules:
+          - and:
+            - X-Custom-Mail-Id:
+              - '17'
+            - Received:
+              - 75.126.66.62

@@ -33,11 +33,11 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 3
-	
+
 	var err error
 	client, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
-	
+
 	defer func() {
 		require.Nil(client.Disconnect())
 	}()
@@ -102,7 +102,7 @@ func TestSetMailFlags(t *testing.T) {
 	require.Nil(client.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}, false))
 	flags, err = client.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
 	require.Nil(err)
-	require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0",imap.FlaggedFlag}, flags)
+	require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
 	// Remove flags
 	require.Nil(client.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
@@ -222,7 +222,6 @@ func TestParseMailHeaders(t *testing.T) {
 	defer func() {
 		require.Nil(client.Disconnect())
 	}()
-
 
 	for i := 1; i <= numTestmails; i++ {
 		require.Nil(client.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))

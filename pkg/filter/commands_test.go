@@ -19,7 +19,7 @@ func TestApplyCommands(t *testing.T) {
 	var err error
 	imapClient, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
-	
+
 	defer func() {
 		require.Nil(imapClient.Disconnect())
 	}()
@@ -42,14 +42,14 @@ func TestApplyCommands(t *testing.T) {
 	cmds["remove_flags"] = []interface{}{"set_foobar", "bar"}
 
 	// Message 1
-	require.Nil(filter.RunCommands(imapClient,"INBOX", testMails[0].RawMessage.Uid, cmds))
+	require.Nil(filter.RunCommands(imapClient, "INBOX", testMails[0].RawMessage.Uid, cmds))
 	flags, err := imapClient.GetFlags("MyTarget", testMails[0].RawMessage.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"add_foobar", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
 	// Message 2: replace all flags
 	cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", imap.FlaggedFlag}
-	require.Nil(filter.RunCommands(imapClient,"INBOX", testMails[1].RawMessage.Uid, cmds))
+	require.Nil(filter.RunCommands(imapClient, "INBOX", testMails[1].RawMessage.Uid, cmds))
 	flags, err = imapClient.GetFlags("MyTarget", testMails[1].RawMessage.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"42", "bar", "oo", "$mailflagbit0", imap.FlaggedFlag}, flags)
@@ -64,7 +64,7 @@ func TestApplyCommands(t *testing.T) {
 
 	// Apply cmd to this new mail 3 too
 	cmds["replace_all_flags"] = []interface{}{"completly", "different"}
-	require.Nil(filter.RunCommands(imapClient,"INBOX", testMails[0].RawMessage.Uid, cmds))
+	require.Nil(filter.RunCommands(imapClient, "INBOX", testMails[0].RawMessage.Uid, cmds))
 	flags, err = imapClient.GetFlags("MyTarget", testMails[0].RawMessage.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"completly", "different"}, flags)

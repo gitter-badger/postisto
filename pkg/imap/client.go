@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	imapClient "github.com/emersion/go-imap/client"
-	"os"
 	"io/ioutil"
+	"os"
 )
 
 type Client struct {

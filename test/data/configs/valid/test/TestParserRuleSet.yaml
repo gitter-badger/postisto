@@ -41,13 +41,6 @@ accounts:
           - from: you
           - to: you
 
-      failing and comparison:
-        commands: {}
-        rules:
-        - and:
-          - from: you
-          - to: you
-
       failing with unsupported op:
         commands: {}
         rules:
@@ -59,13 +52,13 @@ accounts:
         commands: {}
         rules:
         - and:
-          - from: @example.com
+          - from: "@example.com"
 
       substring comparison with or:
         commands: {}
         rules:
         - or:
-          - from: @example.com
+          - from: "@example.com"
 
       failing on search for empty header:
         commands: {}
@@ -89,13 +82,13 @@ accounts:
         commands: {}
         rules:
         - and:
-          - from: @EXAMPLE.COM
+          - from: "@EXAMPLE.COM"
 
       uppercase in header comparison:
         commands: {}
         rules:
         - and:
-          - to: @example.com
+          - to: "@example.com"
 
       regex comparison:
         commands: {}
@@ -104,11 +97,11 @@ accounts:
           - subject: löve$
           - subject: ^with löve$
           - subject: ^wit.*ve$
-          - subject: "^with\s+löve$"
+          - subject: "^with\\s+löve$"
           - subject: ^.*$
           - subject: .*
-          - subject: "^with\s+l(ö|ä)ve$"
-          - subject: "^with\s+l(?:ö|ä)ve$"
+          - subject: "^with\\s+l(ö|ä)ve$"
+          - subject: "^with\\s+l(?:ö|ä)ve$"
           - subject: ^WITH
 
       comparison with bad regex (and):
@@ -127,7 +120,7 @@ accounts:
         commands: {}
         rules:
         - and:
-          - to: @example.com
+          - to: "@example.com"
         - or:
           - subject: löv
         - and:
@@ -137,7 +130,7 @@ accounts:
         commands: {}
         rules:
         - and:
-          - to: @examplde.com
+          - to: "@examplde.com"
         - or:
           - subject: löasdv
         - and:

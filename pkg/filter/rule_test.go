@@ -1,9 +1,10 @@
-package filter
+package filter_test
 
 import (
 	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/goccy/go-yaml"
+	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	"strings"
 	"testing"
 )
@@ -95,21 +96,6 @@ func TestParseRuleSet(t *testing.T) {
 					RuleSet: config.RuleSet{
 						{
 							"or": []map[string]interface{}{
-								{"from": "you"},
-								{"to": "you"},
-							},
-						},
-					},
-				},
-			},
-			matchExpected: false,
-		},
-		{
-			filters: config.FilterSet{
-				"failing and comparison": config.Filter{
-					RuleSet: config.RuleSet{
-						{
-							"and": []map[string]interface{}{
 								{"from": "you"},
 								{"to": "you"},
 							},
@@ -423,9 +409,9 @@ func TestParseRuleSet(t *testing.T) {
 	require.NotNil(acc)
 
 	for i, test := range ruleParserTests {
-		for filterName, filter := range test.filters {
+		for filterName, testFilter := range test.filters {
 			// Test with native synthetic test data
-			matched, err := ParseRuleSet(filter.RuleSet, testMailHeaders)
+			matched, err := filter.ParseRuleSet(testFilter.RuleSet, testMailHeaders)
 			if test.err == "" {
 				require.Nil(err)
 			}
@@ -433,7 +419,7 @@ func TestParseRuleSet(t *testing.T) {
 				require.True(strings.HasPrefix(err.Error(), test.err), "NATIVE DATA TEST: Actual error message: %v", err.Error())
 			}
 
-			require.Equal(test.matchExpected, matched, "NATIVE DATA TEST: Test #%v (%q) from ruleParserTests failed! ruleSet=%q testMailHeaders=%q", i+1, filterName, filter.RuleSet, testMailHeaders)
+			require.Equal(test.matchExpected, matched, "NATIVE DATA TEST: Test #%v (%q) from ruleParserTests failed! ruleSet=%q testMailHeaders=%q", i+1, filterName, testFilter.RuleSet, testMailHeaders)
 
 			if filterName == "invalid value type" || filterName == "invalid nested value type" {
 				// can't test NON-JSON data types in YAML
@@ -448,7 +434,7 @@ func TestParseRuleSet(t *testing.T) {
 			require.NotNil(ymlFilter)
 			require.NotNil(ymlFilter.RuleSet)
 
-			matched, err = ParseRuleSet(ymlFilter.RuleSet, testMailHeaders)
+			matched, err = filter.ParseRuleSet(ymlFilter.RuleSet, testMailHeaders)
 			if test.err == "" {
 				require.Nil(err)
 			}

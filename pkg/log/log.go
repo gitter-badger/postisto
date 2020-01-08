@@ -2,15 +2,19 @@ package log
 
 import (
 	"fmt"
-	"github.com/arnisoph/postisto/pkg/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var _log *zap.SugaredLogger
 
+type Config struct {
+	PreSetMode string      `yaml:"mode"`
+	ZapConfig  *zap.Config `yaml:"dangerousAdvancedZapConfig"`
+}
+
 func init() {
-	var logConfig  config.LogConfig
+	var logConfig Config
 	logConfig.PreSetMode = "debug"
 
 	if err := InitWithConfig(logConfig); err != nil {
@@ -18,7 +22,7 @@ func init() {
 	}
 }
 
-func InitWithConfig(logConfig config.LogConfig) error {
+func InitWithConfig(logConfig Config) error {
 	if _log != nil {
 		Debug("Logger already initialized. Will re-initialize now..")
 	}
@@ -30,10 +34,12 @@ func InitWithConfig(logConfig config.LogConfig) error {
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+		config.DisableStacktrace = true
 		cfg = &config
 	case "dev":
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.DisableStacktrace = true
 		cfg = &config
 	case "prod":
 		config := zap.NewProductionConfig()
@@ -64,7 +70,7 @@ func Error(msg string) {
 	_log.Error(msg)
 }
 
-func Errorw(msg string,  context ...interface{}) {
+func Errorw(msg string, context ...interface{}) {
 	_log.With(context...).Error(msg)
 }
 
@@ -80,6 +86,6 @@ func Debug(msg string) {
 	_log.Debug(msg)
 }
 
-func Debugw(msg string,  context ...interface{}) {
+func Debugw(msg string, context ...interface{}) {
 	_log.With(context...).Debug(msg)
 }

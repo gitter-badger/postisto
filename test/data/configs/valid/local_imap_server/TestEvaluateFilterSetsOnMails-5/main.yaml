@@ -10,7 +10,7 @@ accounts:
         rules:
           - and:
             - from:
-              - @youth4work.com
+              - "@youth4work.com"
       test_unicode_from:
         commands:
           move: MailFilterTest-TestUnicodeFrom-梦龙周

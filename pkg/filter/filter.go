@@ -7,14 +7,14 @@ import (
 	imapClient "github.com/emersion/go-imap/client"
 )
 
-func getUnsortedMails(c *imapClient.Client, inputMailbox config.InputMailbox) ([]config.Mail, error) {
+func GetUnsortedMails(c *imapClient.Client, inputMailbox config.InputMailbox) ([]config.Mail, error) {
 	return mail.SearchAndFetchMails(c, inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
 }
 
 func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
 
 	var remainingMails []config.Mail
-	msgs, err := getUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
+	msgs, err := GetUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
 
 	for _, msg := range msgs {
 		var matched bool

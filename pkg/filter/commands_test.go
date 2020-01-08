@@ -1,9 +1,10 @@
-package filter
+package filter_test
 
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/conn"
+	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/mail"
 	"github.com/arnisoph/postisto/test/integration"
 	"github.com/emersion/go-imap"
@@ -43,14 +44,14 @@ func TestApplyCommands(t *testing.T) {
 	cmds["remove_flags"] = []interface{}{"set_foobar", "bar"}
 
 	// Mail 1
-	require.Nil(RunCommands(acc.Connection.Client, "INBOX", testMails[0].RawMail.Uid, cmds))
+	require.Nil(filter.RunCommands(acc.Connection.Client, "INBOX", testMails[0].RawMail.Uid, cmds))
 	flags, err := mail.GetMailFlags(acc.Connection.Client, "MyTarget", testMails[0].RawMail.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"add_foobar", "$mailflagbit0", imap.FlaggedFlag}, flags)
 
 	// Mail 2: replace all flags
 	cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", imap.FlaggedFlag}
-	require.Nil(RunCommands(acc.Connection.Client, "INBOX", testMails[1].RawMail.Uid, cmds))
+	require.Nil(filter.RunCommands(acc.Connection.Client, "INBOX", testMails[1].RawMail.Uid, cmds))
 	flags, err = mail.GetMailFlags(acc.Connection.Client, "MyTarget", testMails[1].RawMail.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"42", "bar", "oo", "$mailflagbit0", imap.FlaggedFlag}, flags)
@@ -65,7 +66,7 @@ func TestApplyCommands(t *testing.T) {
 
 	// Apply cmd to this new mail 3 too
 	cmds["replace_all_flags"] = []interface{}{"completly", "different"}
-	require.Nil(RunCommands(acc.Connection.Client, "INBOX", testMails[0].RawMail.Uid, cmds))
+	require.Nil(filter.RunCommands(acc.Connection.Client, "INBOX", testMails[0].RawMail.Uid, cmds))
 	flags, err = mail.GetMailFlags(acc.Connection.Client, "MyTarget", testMails[0].RawMail.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"completly", "different"}, flags)

@@ -1,8 +1,10 @@
-package log
+package log_test
 
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/arnisoph/postisto/pkg/log"
+
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -14,12 +16,12 @@ func TestInitWithConfig(t *testing.T) {
 
 	// Prepare some test log events
 	testLogging := func() {
-		Debug("Testing a debug log event.")
-		Debugw("Testing a debug log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
-		Info("Testing an info log event.")
-		Infow("Testing an info log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
-		Error("Testing an error log event.")
-		Errorw("Testing an error log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
+		log.Debug("Testing a debug log event.")
+		log.Debugw("Testing a debug log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
+		log.Info("Testing an info log event.")
+		log.Infow("Testing an info log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
+		log.Error("Testing an error log event.")
+		log.Errorw("Testing an error log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
 	}
 
 	fmt.Println("Log with full user-defined log config (zap.Config)")
@@ -27,7 +29,7 @@ func TestInitWithConfig(t *testing.T) {
 	require.Nil(err)
 	require.NotNil(cfg)
 
-	require.NoError(InitWithConfig(cfg.Settings.LogConfig))
+	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
 	testLogging()
 
 	fmt.Println("Log with program default (preset mode debug)")
@@ -37,12 +39,12 @@ func TestInitWithConfig(t *testing.T) {
 	cfg = config.NewConfigWithDefaults()
 	require.NotNil(cfg)
 	cfg.Settings.LogConfig.PreSetMode = "dev"
-	require.NoError(InitWithConfig(cfg.Settings.LogConfig))
+	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
 	testLogging()
 
 	fmt.Println("Log with user default (preset mode prod)")
 	cfg = config.NewConfigWithDefaults()
 	require.NotNil(cfg)
-	require.NoError(InitWithConfig(cfg.Settings.LogConfig))
+	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
 	testLogging()
 }

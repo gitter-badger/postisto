@@ -1,9 +1,10 @@
-package filter
+package filter_test
 
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/conn"
+	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/mail"
 	"github.com/arnisoph/postisto/test/integration"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func TestGetUnsortedMails(t *testing.T) {
 	}
 
 	// ACTUAL TESTS BELOW
-	testMessages, err := getUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
+	testMessages, err := filter.GetUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
 	require.Nil(err)
 	require.Equal(2, len(testMessages))
 }
@@ -128,13 +129,16 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 		// Simulate new unsorted mails by uploading
 		for _, mailNum := range test.mailsToUpload {
+			require.NotNil(acc.Connection.Client)
+			require.NotNil(acc)
+			require.NotNil(acc.InputMailbox)
 			require.Nil(mail.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, []string{}), debugInfo)
 		}
 
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
-		_, err = EvaluateFilterSetsOnMails(*acc)
+		_, err = filter.EvaluateFilterSetsOnMails(*acc)
 		require.Nil(err)
 
 		// Verify Source

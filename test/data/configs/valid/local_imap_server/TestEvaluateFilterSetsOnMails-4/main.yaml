@@ -10,7 +10,7 @@ accounts:
         rules:
           - and:
             - from:
-              - @youth4work.com
+              - "@youth4work.com"
       tes_misc:
         commands:
           move: MailFilterTest-TestMisc

@@ -18,7 +18,7 @@ func init() {
 	logConfig.PreSetMode = "debug"
 
 	if err := InitWithConfig(logConfig); err != nil {
-		panic(fmt.Sprintf("Failed to initialize logger: %q\n\nThat should not happen. Please call a doctor.", err.Error())) //TODO bad idea?
+		panic(fmt.Sprintf("Failed to initialize logger: %q\n\nThat should not happen. Please call a doctor.", err.Error()))
 	}
 }
 

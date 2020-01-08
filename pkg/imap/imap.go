@@ -151,7 +151,7 @@ func (conn *Client) SetFlags(mailbox string, uids []uint32, flagOp string, flags
 	}
 
 	if expunge {
-		if err := conn.client.Expunge(nil); err != nil { //TODO set & verify ch to check list of expunged mails
+		if err := conn.client.Expunge(nil); err != nil {
 			log.Errorw("Failed to expunge after setting message flags", err, "mailbox", mailbox)
 			return err
 		}

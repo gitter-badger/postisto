@@ -16,10 +16,10 @@ type Message struct {
 type MessageHeaders map[string]interface{}
 
 func NewMessage(rawMail *imapUtil.Message, headers MessageHeaders) *Message {
-	return &Message{RawMessage: *rawMail, Headers: headers} //TODO
+	return &Message{RawMessage: *rawMail, Headers: headers}
 }
 
-func parseMessageHeaders(rawMessage *imapUtil.Message) (MessageHeaders, error) { //make private?
+func parseMessageHeaders(rawMessage *imapUtil.Message) (MessageHeaders, error) {
 	headers := MessageHeaders{}
 	var err error
 
@@ -142,7 +142,7 @@ func parseAddrList(mr *mailUtil.Reader, fieldName string, fallback string) (stri
 	return fieldValue, err
 }
 
-func contains(s []string, e string) bool { //TODO
+func contains(s []string, e string) bool { //TODO do we really need to implement this?
 	for _, a := range s {
 		if a == e {
 			return true

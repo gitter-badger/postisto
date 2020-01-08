@@ -35,7 +35,7 @@ func NewClient(connConfig config.ConnectionConfig) (*Client, error) {
 
 	tlsConfig := &tls.Config{
 		ServerName:         connConfig.Server,
-		InsecureSkipVerify: !*connConfig.TLSVerify, //TODO that's incredibely dangerous! do validation ourself here?
+		InsecureSkipVerify: !*connConfig.TLSVerify,
 		MinVersion:         tls.VersionTLS12,
 		RootCAs:            certPool,
 	}

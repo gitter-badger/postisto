@@ -13,7 +13,7 @@ func ParseRuleSet(ruleSet config.RuleSet, headers imap.MessageHeaders) (bool, er
 	var err error
 
 	for _, rule := range ruleSet {
-		matched, err := parseRule(rule, headers)
+		matched, err := parseRuleAgainstHeaders(rule, headers)
 		if err != nil {
 			return false, err
 		}
@@ -26,7 +26,7 @@ func ParseRuleSet(ruleSet config.RuleSet, headers imap.MessageHeaders) (bool, er
 	return false, err
 }
 
-func parseRule(rule config.Rule, headers imap.MessageHeaders) (bool, error) {
+func parseRuleAgainstHeaders(rule config.Rule, headers imap.MessageHeaders) (bool, error) {
 	var err error
 
 	for op, patterns := range rule {
@@ -36,7 +36,7 @@ func parseRule(rule config.Rule, headers imap.MessageHeaders) (bool, error) {
 		case "or":
 			for _, pattern := range patterns {
 				for patternHeaderName, patternValues := range pattern {
-					patternHeaderName := strings.ToLower(patternHeaderName) //TODO use custom method
+					patternHeaderName := strings.ToLower(patternHeaderName)
 
 					if _, keyInMap := headers[patternHeaderName]; !keyInMap {
 						continue
@@ -51,13 +51,13 @@ func parseRule(rule config.Rule, headers imap.MessageHeaders) (bool, error) {
 			}
 		case "and":
 			var patternMatched bool
+
 			for _, pattern := range patterns {
 				for patternHeaderName, patternValues := range pattern {
-					patternHeaderName := strings.ToLower(patternHeaderName) //TODO use custom method
+					patternHeaderName := strings.ToLower(patternHeaderName)
 
 					if _, keyInMap := headers[patternHeaderName]; !keyInMap {
-						patternMatched = false
-						continue
+						return false, nil
 					}
 
 					if matched, err := checkRulePattern(patternValues, headers[patternHeaderName]); err != nil {

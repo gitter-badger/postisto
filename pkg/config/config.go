@@ -96,7 +96,7 @@ func (cfg *Config) validate() error {
 
 	// Settings
 	if cfg.Settings.LogConfig.PreSetMode != "" && cfg.Settings.LogConfig.ZapConfig != nil {
-		return fmt.Errorf("log config validation error: either set mode or config") //TODO
+		return fmt.Errorf("log config validation error: either set mode or config")
 	}
 
 	return nil

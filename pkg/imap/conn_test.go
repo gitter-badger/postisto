@@ -1,8 +1,8 @@
-package conn_test
+package imap_test
 
 import (
 	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/arnisoph/postisto/pkg/conn"
+	"github.com/arnisoph/postisto/pkg/imap"
 	"github.com/arnisoph/postisto/test/integration"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -28,7 +28,7 @@ func TestConnect(t *testing.T) {
 
 	defer func() {
 		for _, acc := range accs {
-			require.Nil(conn.Disconnect(acc.Connection.Client))
+			require.Nil(imap.Disconnect(acc.Connection.Client))
 		}
 	}()
 
@@ -37,30 +37,30 @@ func TestConnect(t *testing.T) {
 	var err error
 
 	// connect to IMAP server
-	accs["starttls"].Connection.Client, err = conn.Connect(accs["starttls"].Connection)
+	accs["starttls"].Connection.Client, err = imap.Connect(accs["starttls"].Connection)
 	require.Nil(err)
 
 	accs["starttls"].Connection.Password = "wrongpass"
-	accs["starttls"].Connection.Client, err = conn.Connect(accs["starttls"].Connection)
+	accs["starttls"].Connection.Client, err = imap.Connect(accs["starttls"].Connection)
 	require.EqualError(err, "Authentication failed.")
 
-	accs["starttls_wrongport"].Connection.Client, err = conn.Connect(accs["starttls_wrongport"].Connection)
+	accs["starttls_wrongport"].Connection.Client, err = imap.Connect(accs["starttls_wrongport"].Connection)
 	require.Error(err)
 
-	accs["imaps"].Connection.Client, err = conn.Connect(accs["imaps"].Connection)
+	accs["imaps"].Connection.Client, err = imap.Connect(accs["imaps"].Connection)
 	require.Nil(err)
 
-	accs["imaps_wrongport"].Connection.Client, err = conn.Connect(accs["imaps_wrongport"].Connection)
+	accs["imaps_wrongport"].Connection.Client, err = imap.Connect(accs["imaps_wrongport"].Connection)
 	require.Error(err)
 
 	if os.Getenv("USER") != "ab" {
-		_, err = conn.Connect(accs["nocacert"].Connection)
+		_, err = imap.Connect(accs["nocacert"].Connection)
 		require.EqualError(err, "x509: certificate signed by unknown authority")
 	}
 
-	accs["badcacert"].Connection.Client, err = conn.Connect(accs["badcacert"].Connection)
+	accs["badcacert"].Connection.Client, err = imap.Connect(accs["badcacert"].Connection)
 	require.EqualError(err, "x509: certificate signed by unknown authority")
 
-	accs["badcacertpath"].Connection.Client, err = conn.Connect(accs["badcacertpath"].Connection)
+	accs["badcacertpath"].Connection.Client, err = imap.Connect(accs["badcacertpath"].Connection)
 	require.EqualError(err, "open ca-doesnotexist.pem: no such file or directory")
 }

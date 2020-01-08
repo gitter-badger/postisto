@@ -1,12 +1,12 @@
-package mail
+package imap
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/emersion/go-imap"
-	imapMove "github.com/emersion/go-imap-move"
-	imapClient "github.com/emersion/go-imap/client"
+	imapUtil "github.com/emersion/go-imap"
+	imapMoveUtil "github.com/emersion/go-imap-move"
+	imapClientUtil "github.com/emersion/go-imap/client"
 	mailUtil "github.com/emersion/go-message/mail"
 	"os"
 	"strings"
@@ -14,7 +14,17 @@ import (
 	"time"
 )
 
-func UploadMails(c *imapClient.Client, file string, mailbox string, flags []string) error {
+// System message flags, defined in RFC 3501 section 2.3.2.
+const (
+	SeenFlag     = "\\Seen"
+	AnsweredFlag = "\\Answered"
+	FlaggedFlag  = "\\Flagged"
+	DeletedFlag  = "\\Deleted"
+	DraftFlag    = "\\Draft"
+	RecentFlag   = "\\Recent"
+)
+
+func UploadMails(c *imapClientUtil.Client, file string, mailbox string, flags []string) error {
 	data, err := os.Open(file)
 	defer data.Close()
 
@@ -36,7 +46,7 @@ func UploadMails(c *imapClient.Client, file string, mailbox string, flags []stri
 	return c.Append(mailbox, flags, time.Now(), msg)
 }
 
-func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
+func SearchMails(c *imapClientUtil.Client, mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
 
 	// Select mailbox
 	if _, err := Select(c, mailbox, true, false); err != nil {
@@ -44,7 +54,7 @@ func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, witho
 	}
 
 	// Define search criteria
-	criteria := imap.NewSearchCriteria()
+	criteria := imapUtil.NewSearchCriteria()
 	if len(withFlags) > 0 {
 		criteria.WithFlags = withFlags
 	}
@@ -56,7 +66,7 @@ func SearchMails(c *imapClient.Client, mailbox string, withFlags []string, witho
 	return c.UidSearch(criteria)
 }
 
-func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.Mail, error) {
+func FetchMails(c *imapClientUtil.Client, mailbox string, uids []uint32) ([]config.Mail, error) {
 
 	// Select mailbox
 	if _, err := Select(c, mailbox, true, false); err != nil {
@@ -65,16 +75,16 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.M
 
 	var fetchedMails []config.Mail
 
-	seqset := imap.SeqSet{}
+	seqset := imapUtil.SeqSet{}
 	for _, uid := range uids {
 		seqset.AddNum(uid)
 	}
 
-	var section imap.BodySectionName
-	section.Specifier = imap.HeaderSpecifier // Loads all headers only (no body)
-	items := []imap.FetchItem{section.FetchItem(), imap.FetchUid, imap.FetchEnvelope}
+	var section imapUtil.BodySectionName
+	section.Specifier = imapUtil.HeaderSpecifier // Loads all headers only (no body)
+	items := []imapUtil.FetchItem{section.FetchItem(), imapUtil.FetchUid, imapUtil.FetchEnvelope}
 
-	imapMessages := make(chan *imap.Message, len(uids))
+	imapMessages := make(chan *imapUtil.Message, len(uids))
 	done := make(chan error, 1)
 	go func() {
 		done <- c.UidFetch(&seqset, items, imapMessages)
@@ -96,7 +106,7 @@ func FetchMails(c *imapClient.Client, mailbox string, uids []uint32) ([]config.M
 	return fetchedMails, err
 }
 
-func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []string, withoutFlags []string) ([]config.Mail, error) {
+func SearchAndFetchMails(c *imapClientUtil.Client, mailbox string, withFlags []string, withoutFlags []string) ([]config.Mail, error) {
 	uids, err := SearchMails(c, mailbox, withFlags, withoutFlags)
 
 	if err != nil || len(uids) == 0 {
@@ -106,23 +116,23 @@ func SearchAndFetchMails(c *imapClient.Client, mailbox string, withFlags []strin
 	return FetchMails(c, mailbox, uids)
 }
 
-func DeleteMails(c *imapClient.Client, mailbox string, uids []uint32, expunge bool) error {
-	return SetMailFlags(c, mailbox, uids, "+FLAGS", []interface{}{imap.DeletedFlag}, expunge)
+func DeleteMails(c *imapClientUtil.Client, mailbox string, uids []uint32, expunge bool) error {
+	return SetMailFlags(c, mailbox, uids, "+FLAGS", []interface{}{imapUtil.DeletedFlag}, expunge)
 }
 
-func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp string, flags []interface{}, expunge bool) error {
+func SetMailFlags(c *imapClientUtil.Client, mailbox string, uids []uint32, flagOp string, flags []interface{}, expunge bool) error {
 
 	// Select mailbox
 	if _, err := Select(c, mailbox, false, false); err != nil {
 		return err
 	}
 
-	seqset := imap.SeqSet{}
+	seqset := imapUtil.SeqSet{}
 	for _, uid := range uids {
 		seqset.AddNum(uid)
 	}
 
-	item := imap.FormatFlagsOp(imap.FlagsOp(flagOp), true)
+	item := imapUtil.FormatFlagsOp(imapUtil.FlagsOp(flagOp), true)
 
 	if err := c.UidStore(&seqset, item, flags, nil); err != nil {
 		return err
@@ -135,7 +145,7 @@ func SetMailFlags(c *imapClient.Client, mailbox string, uids []uint32, flagOp st
 	return nil
 }
 
-func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, error) {
+func GetMailFlags(c *imapClientUtil.Client, mailbox string, uid uint32) ([]string, error) {
 	var flags []string
 	var err error
 
@@ -144,12 +154,12 @@ func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, e
 		return nil, err
 	}
 
-	seqset := imap.SeqSet{}
+	seqset := imapUtil.SeqSet{}
 	seqset.AddNum(uid)
 
-	items := []imap.FetchItem{imap.FetchFlags}
+	items := []imapUtil.FetchItem{imapUtil.FetchFlags}
 
-	imapMessages := make(chan *imap.Message, 1)
+	imapMessages := make(chan *imapUtil.Message, 1)
 	done := make(chan error, 1)
 	go func() {
 		done <- c.UidFetch(&seqset, items, imapMessages)
@@ -167,7 +177,7 @@ func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, e
 }
 
 // List mailboxes
-//mailboxes := make(chan *imap.MailboxInfo, 11)
+//mailboxes := make(chan *imapUtil.MailboxInfo, 11)
 //done := make(chan error, 1)
 //go func() {
 //	done <- c.List("", "*", mailboxes)
@@ -178,14 +188,14 @@ func GetMailFlags(c *imapClient.Client, mailbox string, uid uint32) ([]string, e
 //	log.Println("* " + m.Name)
 //}
 
-func CreateMailbox(c *imapClient.Client, name string) error {
+func CreateMailbox(c *imapClientUtil.Client, name string) error {
 	return c.Create(name)
 }
 
 //func MoveMail(acc *config.Account, mailbox string, uid uint32) error {
 //	// Move BY COPYing and Deleting it
 //	var err error
-//	seqset := imap.SeqSet{}
+//	seqset := imapUtil.SeqSet{}
 //	seqset.AddNum(uid)
 //
 //	if err := acc.Connection.Client.Copy(&seqset, mailbox); err != nil {
@@ -210,10 +220,10 @@ func CreateMailbox(c *imapClient.Client, name string) error {
 //	return err
 //}
 
-func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) error {
+func MoveMails(c *imapClientUtil.Client, uids []uint32, from string, to string) error {
 	var err error
 
-	seqset := imap.SeqSet{}
+	seqset := imapUtil.SeqSet{}
 	for _, uid := range uids {
 		seqset.AddNum(uid)
 	}
@@ -223,7 +233,7 @@ func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) erro
 		return err
 	}
 
-	moveClient := imapMove.NewClient(c)
+	moveClient := imapMoveUtil.NewClient(c)
 
 	err = moveClient.UidMove(&seqset, to)
 
@@ -241,13 +251,13 @@ func MoveMails(c *imapClient.Client, uids []uint32, from string, to string) erro
 	return err
 }
 
-func parseMailHeaders(rawMessage *imap.Message) (config.MailHeaders, error) { //make private?
+func parseMailHeaders(rawMessage *imapUtil.Message) (config.MailHeaders, error) { //make private?
 	headers := config.MailHeaders{}
 	var err error
 
 	// Create for mail parsing
-	var section imap.BodySectionName
-	section.Specifier = imap.HeaderSpecifier // Loads all headers only (no body)
+	var section imapUtil.BodySectionName
+	section.Specifier = imapUtil.HeaderSpecifier // Loads all headers only (no body)
 
 	msgBody := rawMessage.GetBody(&section)
 	if msgBody == nil {
@@ -373,7 +383,7 @@ func contains(s []string, e string) bool { //TODO
 	return false
 }
 
-func Select(c *imapClient.Client, mailbox string, readOnly bool, autoCreate bool) (*imap.MailboxStatus, error) {
+func Select(c *imapClientUtil.Client, mailbox string, readOnly bool, autoCreate bool) (*imapUtil.MailboxStatus, error) {
 	status, err := c.Select(mailbox, readOnly)
 
 	if err == nil {

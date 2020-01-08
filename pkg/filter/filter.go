@@ -2,13 +2,12 @@ package filter
 
 import (
 	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/arnisoph/postisto/pkg/mail"
-	"github.com/emersion/go-imap"
+	"github.com/arnisoph/postisto/pkg/imap"
 	imapClient "github.com/emersion/go-imap/client"
 )
 
 func GetUnsortedMails(c *imapClient.Client, inputMailbox config.InputMailbox) ([]config.Mail, error) {
-	return mail.SearchAndFetchMails(c, inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
+	return imap.SearchAndFetchMails(c, inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
 }
 
 func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
@@ -40,12 +39,12 @@ func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
 
 	for _, msg := range remainingMails {
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
-			err = mail.SetMailFlags(acc.Connection.Client, acc.InputMailbox.Mailbox, []uint32{msg.RawMail.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
+			err = imap.SetMailFlags(acc.Connection.Client, acc.InputMailbox.Mailbox, []uint32{msg.RawMail.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
 			if err != nil {
 				return nil, err //TODO
 			}
 		} else {
-			err = mail.MoveMails(acc.Connection.Client, []uint32{msg.RawMail.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox)
+			err = imap.MoveMails(acc.Connection.Client, []uint32{msg.RawMail.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox)
 			if err != nil {
 				return nil, err //TODO
 			}

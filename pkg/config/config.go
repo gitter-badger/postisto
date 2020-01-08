@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/goccy/go-yaml"
 	"github.com/imdario/mergo"
 	"io/ioutil"
@@ -9,13 +10,23 @@ import (
 	"strings"
 )
 
-func (cfg Config) Load(configPath string) (Config, error) {
+func NewConfig() *Config {
+	return &Config{}
+}
 
+func NewConfigWithDefaults() *Config {
+	cfg := NewConfig()
+	cfg.setDefaults()
+	return cfg
+}
+
+func  NewConfigFromFile(configPath string) (*Config, error) {
+	cfg := NewConfig()
 	var configFiles []string
 
 	stat, err := os.Stat(configPath)
 	if err != nil {
-		return cfg, err
+		return nil, err
 	}
 
 	if stat.IsDir() {
@@ -27,10 +38,10 @@ func (cfg Config) Load(configPath string) (Config, error) {
 				if stat, _ := os.Stat(path); !stat.IsDir() && (strings.HasSuffix(path, ".yml") || strings.HasSuffix(path, ".yaml")) {
 					configFiles = append(configFiles, path)
 				}
-				return nil
+				return err
 			})
 		if err != nil {
-			return cfg, err
+			return nil, err
 		}
 	} else {
 		configFiles = append(configFiles, configPath)
@@ -41,25 +52,43 @@ func (cfg Config) Load(configPath string) (Config, error) {
 		yamlFile, err := ioutil.ReadFile(file)
 
 		if err != nil {
-			return cfg, err
+			return nil, err
 		}
 
 		err = yaml.Unmarshal(yamlFile, &fileCfg)
 
 		if err != nil {
-			return cfg, err
+			return nil, err
 		}
 
-		if err := mergo.Merge(&cfg, fileCfg, mergo.WithOverride); err != nil {
-			return cfg, err
+		if err := mergo.Merge(cfg, fileCfg, mergo.WithOverride); err != nil {
+			return nil, err
 		}
 	}
 
-	return cfg.validate()
+	cfg.setDefaults()
+	if err = cfg.validate(); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }
 
-func (cfg Config) validate() (Config, error) { //TODO
+func (cfg *Config) validate() error {
 
+	// Accounts
+
+	// Filters
+
+	// Settings
+	if cfg.Settings.LogConfig.PreSetMode != "" && cfg.Settings.LogConfig.ZapConfig != nil {
+		return fmt.Errorf("log config validation error: either set mode or config") //TODO
+	}
+
+	return nil
+}
+
+func (cfg *Config) setDefaults() {
 	// Accounts
 	for i := range cfg.Accounts {
 		acc := cfg.Accounts[i]
@@ -90,6 +119,7 @@ func (cfg Config) validate() (Config, error) { //TODO
 	// Filters
 
 	// Settings
-
-	return cfg, nil
+	if cfg.Settings.LogConfig.PreSetMode == "" && cfg.Settings.LogConfig.ZapConfig == nil {
+		cfg.Settings.LogConfig.PreSetMode = "prod"
+	}
 }

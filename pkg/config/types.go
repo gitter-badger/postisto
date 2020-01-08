@@ -3,19 +3,21 @@ package config
 import (
 	"github.com/emersion/go-imap"
 	imapClient "github.com/emersion/go-imap/client"
+	"go.uber.org/zap"
 )
 
 type Config struct {
 	Accounts map[string]*Account `yaml:"accounts"`
 
 	Settings struct {
-		//logging
+		LogConfig LogConfig `yaml:"logging"`
 		UseGPGAgent bool `yaml:"gpg_use_agent"`
 	} `yaml:"settings"`
 }
 
-func NewConfig() Config {
-	return Config{}
+type LogConfig struct {
+	PreSetMode string      `yaml:"mode"`
+	ZapConfig     *zap.Config `yaml:"config"`
 }
 
 type Account struct {

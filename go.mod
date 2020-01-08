@@ -9,6 +9,7 @@ require (
 	github.com/goccy/go-yaml v1.1.8
 	github.com/imdario/mergo v0.3.8
 	github.com/stretchr/testify v1.4.0
+	go.uber.org/zap v1.13.0
 	gopkg.in/bsm/ratelimit.v1 v1.0.0-20160220154919-db14e161995a // indirect
 	gopkg.in/redis.v4 v4.2.4
 )

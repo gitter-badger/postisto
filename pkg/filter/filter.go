@@ -41,12 +41,12 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 
 	for _, msg := range remainingMsgs {
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
-			log.Infow("No filter matched to this message. Moving it to the fallbock mailbox.", "mailbox", acc.FallbackMailbox)
+			log.Infow("No filter matched to this message. Flagging the message now.")
 			if err = imapClient.SetFlags(acc.InputMailbox.Mailbox, []uint32{msg.RawMessage.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false); err != nil {
 				return nil, err
 			}
 		} else {
-			log.Infow("No filter matched to this message. Moving it to the fallbock mailbox.", "mailbox", acc.FallbackMailbox)
+			log.Infow("No filter matched to this message. Moving it to the fallback mailbox now.", "mailbox", acc.FallbackMailbox)
 			if err = imapClient.Move([]uint32{msg.RawMessage.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox); err != nil {
 				return nil, err
 			}

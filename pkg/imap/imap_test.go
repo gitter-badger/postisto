@@ -14,18 +14,18 @@ func TestUploadMails(t *testing.T) {
 
 	acc := integration.NewStandardAccount(t)
 
+	var err error
+	client, err := imap.NewClient(acc.Connection)
 	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
+		require.Nil(client.Disconnect())
 	}()
 
-	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
 	require.Nil(err)
 
 	// ACTUAL TESTS BELOW
 
-	require.EqualError(imap.UploadMails(acc.Connection.Client, "does-not-exit.txt", "INBOX", []string{}), "open does-not-exit.txt: no such file or directory")
-	require.Error(imap.UploadMails(acc.Connection.Client, "../../test/data/mails/empty-mail.txt", "INBOX", []string{}))
+	require.EqualError(client.Upload("does-not-exit.txt", "INBOX", []string{}), "open does-not-exit.txt: no such file or directory")
+	require.Error(client.Upload("../../test/data/mails/empty-mail.txt", "INBOX", []string{}))
 }
 
 func TestSearchAndFetchMails(t *testing.T) {
@@ -33,34 +33,34 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 3
-
+	
+	var err error
+	client, err := imap.NewClient(acc.Connection)
+	require.Nil(err)
+	
 	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
+		require.Nil(client.Disconnect())
 	}()
 
-	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
-	require.Nil(err)
-
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
+		require.Nil(client.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Test searching only
-	uids, err := imap.SearchMails(acc.Connection.Client, "INBOX", nil, nil)
+	uids, err := client.Search("INBOX", nil, nil)
 	require.Nil(err)
 	require.Equal([]uint32{1, 2, 3}, uids)
 
 	// Search in non-existing mailbox
-	fetchedMails, err := imap.SearchAndFetchMails(acc.Connection.Client, "non-existent", nil, nil)
+	fetchedMails, err := client.SearchAndFetch("non-existent", nil, nil)
 	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: non-existent"))
 	require.Equal(0, len(fetchedMails))
 
 	// Search in correct Mailbox now
-	fetchedMails, err = imap.SearchAndFetchMails(acc.Connection.Client, "INBOX", nil, nil)
+	fetchedMails, err = client.SearchAndFetch("INBOX", nil, nil)
 	require.Nil(err)
 	require.Equal(numTestmails, len(fetchedMails))
 }
@@ -71,27 +71,27 @@ func TestSetMailFlags(t *testing.T) {
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 1
 
-	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
-	}()
-
 	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
+	client, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
 
+	defer func() {
+		require.Nil(client.Disconnect())
+	}()
+
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
+		require.Nil(client.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := imap.SearchAndFetchMails(acc.Connection.Client, "INBOX", nil, nil)
+	fetchedMails, err := client.SearchAndFetch("INBOX", nil, nil)
 	require.Nil(err)
 	require.Equal(numTestmails, len(fetchedMails))
 
-	// Test failed GetMailFlags (because of non-existing mailbox)
-	_, err = imap.GetMailFlags(acc.Connection.Client, "non-existing-mailbox", 0)
+	// Test failed GetFlags (because of non-existing mailbox)
+	_, err = client.GetFlags("non-existing-mailbox", 0)
 	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: non-existing-mailbox"))
 
@@ -99,20 +99,20 @@ func TestSetMailFlags(t *testing.T) {
 	var flags []string
 
 	// Add flags
-	require.Nil(imap.SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMails[0].RawMail.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}, false))
-	flags, err = imap.GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[0].RawMail.Uid)
+	require.Nil(client.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", imap.FlaggedFlag}, false))
+	flags, err = client.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
 	require.Nil(err)
-	require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", imap.FlaggedFlag}, flags)
+	require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0",imap.FlaggedFlag}, flags)
 
 	// Remove flags
-	require.Nil(imap.SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMails[0].RawMail.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
-	flags, err = imap.GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[0].RawMail.Uid)
+	require.Nil(client.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
+	flags, err = client.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"$mailflagbit0", imap.FlaggedFlag}, flags)
 
 	// Replace all flags with new list
-	require.Nil(imap.SetMailFlags(acc.Connection.Client, "INBOX", []uint32{fetchedMails[0].RawMail.Uid}, "FLAGS", []interface{}{"123", "forty-two"}, false))
-	flags, err = imap.GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[0].RawMail.Uid)
+	require.Nil(client.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "FLAGS", []interface{}{"123", "forty-two"}, false))
+	flags, err = client.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
 	require.Nil(err)
 	require.ElementsMatch([]string{"123", "forty-two"}, flags)
 }
@@ -123,44 +123,44 @@ func TestMoveMails(t *testing.T) {
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 5
 
-	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
-	}()
-
 	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
+	client, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
 
+	defer func() {
+		require.Nil(client.Disconnect())
+	}()
+
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
+		require.Nil(client.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := imap.SearchAndFetchMails(acc.Connection.Client, acc.InputMailbox.Mailbox, nil, nil)
+	fetchedMails, err := client.SearchAndFetch(acc.InputMailbox.Mailbox, nil, nil)
 	require.Equal(numTestmails, len(fetchedMails))
 	require.Nil(err)
 
 	// Move mails arround
-	err = imap.MoveMails(acc.Connection.Client, []uint32{fetchedMails[0].RawMail.Uid}, "INBOX", "MyTarget42")
+	err = client.Move([]uint32{fetchedMails[0].RawMessage.Uid}, "INBOX", "MyTarget42")
 	require.Nil(err)
 
-	err = imap.MoveMails(acc.Connection.Client, []uint32{fetchedMails[1].RawMail.Uid}, "INBOX", "INBOX")
+	err = client.Move([]uint32{fetchedMails[1].RawMessage.Uid}, "INBOX", "INBOX")
 	require.Nil(err)
 
-	err = imap.MoveMails(acc.Connection.Client, []uint32{fetchedMails[2].RawMail.Uid}, "INBOX", "MyTarget!!!")
+	err = client.Move([]uint32{fetchedMails[2].RawMessage.Uid}, "INBOX", "MyTarget!!!")
 	require.Nil(err)
 
-	err = imap.MoveMails(acc.Connection.Client, []uint32{fetchedMails[3].RawMail.Uid}, "wrong-source", "MyTarget!!!")
+	err = client.Move([]uint32{fetchedMails[3].RawMessage.Uid}, "wrong-source", "MyTarget!!!")
 	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: wrong-source"))
 
-	err = imap.MoveMails(acc.Connection.Client, []uint32{fetchedMails[4].RawMail.Uid}, "INBOX", "ütf-8 & 梦龙周")
+	err = client.Move([]uint32{fetchedMails[4].RawMessage.Uid}, "INBOX", "ütf-8 & 梦龙周")
 	require.Nil(err)
 
 	var uids []uint32
-	uids, err = imap.SearchMails(acc.Connection.Client, "INBOX", nil, nil)
+	uids, err = client.Search("INBOX", nil, nil)
 	require.Nil(err)
 	require.EqualValues([]uint32{4, 6}, uids) // UID 1 moved, UID 2 became 6, UID 3 moved, UID 4 kept untouched, UID 5 moved
 }
@@ -171,40 +171,40 @@ func TestDeleteMails(t *testing.T) {
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 3
 
-	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
-	}()
-
 	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
+	client, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
 
+	defer func() {
+		require.Nil(client.Disconnect())
+	}()
+
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
+		require.Nil(client.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := imap.SearchAndFetchMails(acc.Connection.Client, acc.InputMailbox.Mailbox, nil, nil)
+	fetchedMails, err := client.SearchAndFetch(acc.InputMailbox.Mailbox, nil, nil)
 	require.Equal(numTestmails, len(fetchedMails))
 	require.Nil(err)
 
 	// Delete one mail
-	err = imap.DeleteMails(acc.Connection.Client, "does-not-exist", []uint32{fetchedMails[0].RawMail.Uid}, true) // mailbox doesn't exist, can't be deleted
+	err = client.Delete("does-not-exist", []uint32{fetchedMails[0].RawMessage.Uid}, true) // mailbox doesn't exist, can't be deleted
 	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: does-not-exist"))
 
-	err = imap.DeleteMails(acc.Connection.Client, "INBOX", []uint32{fetchedMails[1].RawMail.Uid}, false) // not moved yet, flag, don't expunge yet
+	err = client.Delete("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, false) // not moved yet, flag, don't expunge yet
 	require.Nil(err)
-	flags, err := imap.GetMailFlags(acc.Connection.Client, "INBOX", fetchedMails[1].RawMail.Uid)
+	flags, err := client.GetFlags("INBOX", fetchedMails[1].RawMessage.Uid)
 	require.Nil(err)
 	require.EqualValues([]string{imap.DeletedFlag}, flags)
-	err = imap.DeleteMails(acc.Connection.Client, "INBOX", []uint32{fetchedMails[1].RawMail.Uid}, true) // not moved yet, flag & expunge
+	err = client.Delete("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, true) // not moved yet, flag & expunge
 	require.Nil(err)
 
 	var uids []uint32
-	uids, err = imap.SearchMails(acc.Connection.Client, "INBOX", nil, nil)
+	uids, err = client.Search("INBOX", nil, nil)
 	require.Nil(err)
 	require.EqualValues([]uint32{1, 3}, uids) // UID 1 kept untouched, UID 2 deleted, UID 3 kept untouched
 }
@@ -215,22 +215,23 @@ func TestParseMailHeaders(t *testing.T) {
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 5
 
-	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
-	}()
-
 	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
+	client, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
 
+	defer func() {
+		require.Nil(client.Disconnect())
+	}()
+
+
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
+		require.Nil(client.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := imap.SearchAndFetchMails(acc.Connection.Client, acc.InputMailbox.Mailbox, nil, nil)
+	fetchedMails, err := client.SearchAndFetch(acc.InputMailbox.Mailbox, nil, nil)
 	require.Nil(err)
 	require.Equal(numTestmails, len(fetchedMails))
 

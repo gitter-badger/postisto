@@ -3,17 +3,16 @@ package filter
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/imap"
-	imapClient "github.com/emersion/go-imap/client"
 )
 
-func GetUnsortedMails(c *imapClient.Client, inputMailbox config.InputMailbox) ([]config.Mail, error) {
-	return imap.SearchAndFetchMails(c, inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
+func GetUnsortedMsgs(imapClient *imap.Client, inputMailbox config.InputMailbox) ([]*imap.Message, error) {
+	return imapClient.SearchAndFetch(inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
 }
 
-func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
+func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*imap.Message, error) {
 
-	var remainingMails []config.Mail
-	msgs, err := GetUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
+	var remainingMsgs []*imap.Message
+	msgs, err := GetUnsortedMsgs(imapClient, *acc.InputMailbox)
 
 	for _, msg := range msgs {
 		var matched bool
@@ -25,7 +24,7 @@ func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
 			}
 
 			if matched {
-				err = RunCommands(acc.Connection.Client, acc.InputMailbox.Mailbox, msg.RawMail.Uid, filterSet.Commands)
+				err = RunCommands(imapClient, acc.InputMailbox.Mailbox, msg.RawMessage.Uid, filterSet.Commands)
 				if err != nil {
 					return nil, err //TODO
 				}
@@ -33,23 +32,23 @@ func EvaluateFilterSetsOnMails(acc config.Account) ([]config.Mail, error) {
 		}
 
 		if !matched {
-			remainingMails = append(remainingMails, msg)
+			remainingMsgs = append(remainingMsgs, msg)
 		}
 	}
 
-	for _, msg := range remainingMails {
+	for _, msg := range remainingMsgs {
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
-			err = imap.SetMailFlags(acc.Connection.Client, acc.InputMailbox.Mailbox, []uint32{msg.RawMail.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
+			err = imapClient.SetFlags(acc.InputMailbox.Mailbox, []uint32{msg.RawMessage.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
 			if err != nil {
 				return nil, err //TODO
 			}
 		} else {
-			err = imap.MoveMails(acc.Connection.Client, []uint32{msg.RawMail.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox)
+			err = imapClient.Move([]uint32{msg.RawMessage.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox)
 			if err != nil {
 				return nil, err //TODO
 			}
 		}
 	}
 
-	return remainingMails, err
+	return remainingMsgs, err
 }

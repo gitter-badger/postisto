@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/log"
-	"github.com/emersion/go-imap"
-	imapClient "github.com/emersion/go-imap/client"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -21,6 +19,7 @@ type Config struct {
 		UseGPGAgent bool       `yaml:"gpg_use_agent"`
 	} `yaml:"settings"`
 }
+
 type Account struct {
 	Connection      ConnectionConfig `yaml:"connection"`
 	InputMailbox    *InputMailbox    `yaml:"input"`
@@ -39,7 +38,6 @@ type ConnectionConfig struct {
 	Starttls      *bool              `yaml:"starttls"`
 	TLSVerify     *bool              `yaml:"tlsverify"`
 	TLSCACertFile string             `yaml:"cacertfile"`
-	Client        *imapClient.Client //TODO custom type?
 }
 
 type FilterSet map[string]Filter
@@ -67,16 +65,6 @@ type Rule map[string][]map[string]interface{}
 type InputMailbox struct {
 	Mailbox      string   `yaml:"mailbox"`
 	WithoutFlags []string `yaml:"without_flags,flow"`
-}
-
-type Mail struct {
-	RawMail *imap.Message
-	Headers MailHeaders
-}
-type MailHeaders map[string]interface{}
-
-func NewMail(rawMail *imap.Message, headers MailHeaders) Mail {
-	return Mail{RawMail: rawMail, Headers: headers}
 }
 
 func NewConfig() *Config {

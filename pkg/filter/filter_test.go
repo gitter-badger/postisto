@@ -16,20 +16,20 @@ func TestGetUnsortedMails(t *testing.T) {
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 2
 
-	defer func() {
-		require.Nil(imap.Disconnect(acc.Connection.Client))
-	}()
-
 	var err error
-	acc.Connection.Client, err = imap.Connect(acc.Connection)
+	imapClient, err := imap.NewClient(acc.Connection)
 	require.Nil(err)
 
+	defer func() {
+		require.Nil(imapClient.Disconnect())
+	}()
+
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
+		require.Nil(imapClient.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
-	testMessages, err := filter.GetUnsortedMails(acc.Connection.Client, *acc.InputMailbox)
+	testMessages, err := filter.GetUnsortedMsgs(imapClient, *acc.InputMailbox)
 	require.Nil(err)
 	require.Equal(2, len(testMessages))
 }
@@ -122,45 +122,45 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		// Set debug info for failed assertions
 		debugInfo := map[string]string{"username": acc.Connection.Username, "testNum": fmt.Sprint(testNum + 1)}
 
-		// Connect to IMAP server
-		acc.Connection.Client, err = imap.Connect(acc.Connection)
+		// NewClient to IMAP server
+		imapClient, err := imap.NewClient(acc.Connection)
 		require.Nil(err)
 
 		// Simulate new unsorted mails by uploading
 		for _, mailNum := range test.mailsToUpload {
-			require.NotNil(acc.Connection.Client)
+			require.NotNil(imapClient)
 			require.NotNil(acc)
 			require.NotNil(acc.InputMailbox)
-			require.Nil(imap.UploadMails(acc.Connection.Client, fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, []string{}), debugInfo)
+			require.Nil(imapClient.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, []string{}), debugInfo)
 		}
 
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
-		_, err = filter.EvaluateFilterSetsOnMails(*acc)
+		_, err = filter.EvaluateFilterSetsOnMsgs(imapClient, *acc)
 		require.Nil(err)
 
 		// Verify Source
-		fetchedMails, err := imap.SearchMails(acc.Connection.Client, acc.InputMailbox.Mailbox, nil, nil)
+		fetchedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, nil)
 		require.Nil(err, debugInfo)
 		//require.Equal(test.sourceNum, len(remainingMails))
 		require.Equal(test.sourceRemaining, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
 
 		// Verify Targets
 		for _, target := range test.targets {
-			fetchedMails, err := imap.SearchMails(acc.Connection.Client, target.name, nil, nil)
+			fetchedMails, err := imapClient.Search(target.name, nil, nil)
 			require.Nil(err, debugInfo)
 			require.Equal(target.num, len(fetchedMails), "Unexpected num of mails in target %v", target.name, debugInfo)
 		}
 
 		// Verify fallback mailbox (if != source)
 		if acc.InputMailbox.Mailbox != *acc.FallbackMailbox {
-			inboxMails, err := imap.SearchMails(acc.Connection.Client, *acc.FallbackMailbox, nil, nil)
+			inboxMails, err := imapClient.Search(*acc.FallbackMailbox, nil, nil)
 			require.Nil(err)
 			require.Equal(test.inboxNum, len(inboxMails))
 		}
 
 		// Disconnect - Hoooraaay!
-		require.Nil(imap.Disconnect(acc.Connection.Client))
+		require.Nil(imapClient.Disconnect())
 	}
 }

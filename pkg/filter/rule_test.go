@@ -3,6 +3,7 @@ package filter_test
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/filter"
+	"github.com/arnisoph/postisto/pkg/imap"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	"strings"
@@ -400,7 +401,7 @@ func TestParseRuleSet(t *testing.T) {
 		//},
 	}
 
-	testMailHeaders := config.MailHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": "", "custom-Header": "Foobar"}
+	testMailHeaders := imap.MessageHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": "", "custom-Header": "Foobar"}
 
 	cfg, err := config.NewConfigFromFile("../../test/data/configs/valid/test/TestParserRuleSet.yaml")
 	require.Nil(err)

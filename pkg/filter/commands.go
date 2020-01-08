@@ -3,7 +3,6 @@ package filter
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/imap"
-	imapClient "github.com/emersion/go-imap/client"
 )
 
 //type UnknownCommandTypeError struct {
@@ -22,12 +21,12 @@ import (
 //	return fmt.Sprintf("Bad command target %q", err.targetName)
 //}
 
-func RunCommands(c *imapClient.Client, from string, uid uint32, cmds config.FilterOps) error {
+func RunCommands(conn *imap.Client, from string, uid uint32, cmds config.FilterOps) error {
 	var err error
 	uids := []uint32{uid}
 
 	if cmds["move"] != nil {
-		if err := imap.MoveMails(c, uids, from, cmds["move"].(string)); err != nil {
+		if err := conn.Move(uids, from, cmds["move"].(string)); err != nil {
 			return err
 		}
 	}
@@ -38,19 +37,19 @@ func RunCommands(c *imapClient.Client, from string, uid uint32, cmds config.Filt
 	}
 
 	if cmds["add_flags"] != nil {
-		if err := imap.SetMailFlags(c, to, uids, "+FLAGS", cmds["add_flags"].([]interface{}), false); err != nil {
+		if err := conn.SetFlags(to, uids, "+FLAGS", cmds["add_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}
 
 	if cmds["remove_flags"] != nil {
-		if err := imap.SetMailFlags(c, to, uids, "-FLAGS", cmds["remove_flags"].([]interface{}), false); err != nil {
+		if err := conn.SetFlags(to, uids, "-FLAGS", cmds["remove_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}
 
 	if cmds["replace_all_flags"] != nil {
-		if err := imap.SetMailFlags(c, to, uids, "FLAGS", cmds["replace_all_flags"].([]interface{}), false); err != nil {
+		if err := conn.SetFlags(to, uids, "FLAGS", cmds["replace_all_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}

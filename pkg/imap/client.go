@@ -10,7 +10,11 @@ import (
 	"io/ioutil"
 )
 
-func Connect(connConfig config.ConnectionConfig) (*imapClient.Client, error) {
+type Client struct {
+	client *imapClient.Client
+}
+
+func NewClient(connConfig config.ConnectionConfig) (*Client, error) {
 	var c *imapClient.Client
 	var err error
 
@@ -61,14 +65,17 @@ func Connect(connConfig config.ConnectionConfig) (*imapClient.Client, error) {
 		return nil, err
 	}
 
-	return c, err
+	conn := new(Client)
+	conn.client = c
+
+	return conn, err
 }
 
-func Disconnect(c *imapClient.Client) error {
+func (conn *Client) Disconnect() error {
 
-	if c == nil {
+	if conn.client == nil {
 		// no connection
 		return nil
 	}
-	return c.Logout()
+	return conn.client.Logout()
 }

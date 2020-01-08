@@ -112,8 +112,7 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 	for testNum, test := range tests {
 		// Get config
-		cfg := config.NewConfig()
-		cfg, err := cfg.Load(fmt.Sprintf("../../test/data/configs/valid/local_imap_server/TestEvaluateFilterSetsOnMails-%v/", testNum+1))
+		cfg, err := config.NewConfigFromFile(fmt.Sprintf("../../test/data/configs/valid/local_imap_server/TestEvaluateFilterSetsOnMails-%v/", testNum+1))
 		require.Nil(err)
 		acc := cfg.Accounts["local_imap_server"]
 

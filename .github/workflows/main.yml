@@ -22,7 +22,7 @@ jobs:
         go mod download
 
     - name: Build
-      run: go build -v -o postisto cmd/main.go
+      run: go build -v -o postisto cmd/postisto/main.go
   test:
     name: Test
     runs-on: ubuntu-latest

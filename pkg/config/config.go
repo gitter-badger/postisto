@@ -27,7 +27,7 @@ func NewConfigFromFile(configPath string) (*Config, error) {
 
 	stat, err := os.Stat(configPath)
 	if err != nil {
-		log.Errorw("Failed to check path", "configPath", configPath, "error", err)
+		log.Errorw("Failed to check path", err, "configPath", configPath)
 		return nil, err
 	}
 
@@ -35,12 +35,12 @@ func NewConfigFromFile(configPath string) (*Config, error) {
 		err := filepath.Walk(configPath,
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
-					log.Errorw("Failed to load path", "path", path, "error", err)
+					log.Errorw("Failed to load path", err, "path", path)
 					return err
 				}
 
 				if stat, err := os.Stat(path); err != nil {
-					log.Errorw("Failed to load path", "path", path, "error", err)
+					log.Errorw("Failed to load path", err, "path", path)
 					return err
 				} else if !stat.IsDir() && (strings.HasSuffix(path, ".yml") || strings.HasSuffix(path, ".yaml")) {
 					configFiles = append(configFiles, path)
@@ -50,7 +50,7 @@ func NewConfigFromFile(configPath string) (*Config, error) {
 			})
 
 		if err != nil {
-			log.Errorw("Failed to parse dir", "configPath", configPath, "error", err)
+			log.Errorw("Failed to parse dir", err, "configPath", configPath)
 			return nil, err
 		}
 	} else {
@@ -62,26 +62,26 @@ func NewConfigFromFile(configPath string) (*Config, error) {
 		yamlFile, err := ioutil.ReadFile(file)
 
 		if err != nil {
-			log.Errorw("Failed to read file", "file", file, "error", err)
+			log.Errorw("Failed to read file", err, "file", file)
 			return nil, err
 		}
 
 		err = yaml.Unmarshal(yamlFile, &fileCfg)
 
 		if err != nil {
-			log.Errorw("Failed to parse YAML file", "file", file, "error", err)
+			log.Errorw("Failed to parse YAML file", err, "file", file)
 			return nil, err
 		}
 
 		if err := mergo.Merge(cfg, fileCfg, mergo.WithOverride); err != nil {
-			log.Errorw("Failed to merge YAML file", "file", file, "error", err)
+			log.Errorw("Failed to merge YAML file", err, "file", file)
 			return nil, err
 		}
 	}
 
 	cfg.setDefaults()
 	if err = cfg.validate(); err != nil {
-		log.Errorw("Failed to validate YAML", "yaml", cfg, "error", err)
+		log.Errorw("Failed to validate YAML", err, "yaml", cfg)
 		return nil, err
 	}
 

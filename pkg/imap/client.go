@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/arnisoph/postisto/pkg/log"
 	imapClient "github.com/emersion/go-imap/client"
 	"io/ioutil"
 	"os"
@@ -22,6 +23,7 @@ func NewClient(connConfig config.ConnectionConfig) (*Client, error) {
 	if connConfig.TLSCACertFile != "" {
 		pemBytes, err := ioutil.ReadFile(connConfig.TLSCACertFile)
 		if err != nil {
+			log.Errorw("Failed to load CA cert file", err, "TLSCACertFile", connConfig.TLSCACertFile)
 			return nil, err
 		}
 
@@ -39,22 +41,22 @@ func NewClient(connConfig config.ConnectionConfig) (*Client, error) {
 	}
 
 	if connConfig.IMAPS {
-		c, err = imapClient.DialTLS(fmt.Sprintf("%v:%v", connConfig.Server, connConfig.Port), tlsConfig)
-
+		if c, err = imapClient.DialTLS(fmt.Sprintf("%v:%v", connConfig.Server, connConfig.Port), tlsConfig); err != nil {
+			log.Errorw("Failed to connect to server", err, "server", connConfig.Server)
+			return nil, err
+		}
 	} else {
-		c, err = imapClient.Dial(fmt.Sprintf("%v:%v", connConfig.Server, connConfig.Port))
-
-		if err != nil {
+		if c, err = imapClient.Dial(fmt.Sprintf("%v:%v", connConfig.Server, connConfig.Port)); err != nil {
+			log.Errorw("Failed to connect to server", err, "server", connConfig.Server)
 			return nil, err
 		}
 
 		if *connConfig.Starttls {
-			err = c.StartTLS(tlsConfig)
+			if err = c.StartTLS(tlsConfig); err != nil {
+				log.Errorw("Failed to initiate TLS session after connecting to server (STARTTLS)", err, "server", connConfig.Server)
+				return nil, err
+			}
 		}
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	if connConfig.DebugIMAP {
@@ -62,6 +64,7 @@ func NewClient(connConfig config.ConnectionConfig) (*Client, error) {
 	}
 
 	if err = c.Login(connConfig.Username, connConfig.Password); err != nil {
+		log.Errorw("Failed to login to server", err, "server", connConfig.Server, "username", connConfig.Username)
 		return nil, err
 	}
 

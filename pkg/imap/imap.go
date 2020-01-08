@@ -3,6 +3,7 @@ package imap
 import (
 	"bytes"
 	"fmt"
+	"github.com/arnisoph/postisto/pkg/log"
 	imapUtil "github.com/emersion/go-imap"
 	imapMoveUtil "github.com/emersion/go-imap-move"
 	"os"
@@ -25,27 +26,37 @@ func (conn *Client) Upload(file string, mailbox string, flags []string) error {
 	defer data.Close()
 
 	if err != nil {
+		log.Errorw("Failed to upload message to mailbox", err, "mailbox", mailbox)
 		return err
 	}
 
 	msg := bytes.NewBuffer(nil)
 
 	if _, err = msg.ReadFrom(data); err != nil {
+		log.Errorw("Failed to upload message to mailbox", err, "mailbox", mailbox)
 		return err
 	}
 
 	// Select mailbox
 	if _, err = conn.Select(mailbox, false, true); err != nil {
+		log.Errorw("Failed to upload message to mailbox", err, "mailbox", mailbox)
 		return err
 	}
 
-	return conn.client.Append(mailbox, flags, time.Now(), msg)
+	// Upload (APPEND)
+	if err = conn.client.Append(mailbox, flags, time.Now(), msg); err != nil {
+		log.Errorw("Failed to upload message to mailbox", err, "mailbox", mailbox)
+		return err
+	}
+
+	return nil
 }
 
 func (conn *Client) Search(mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, true, false); err != nil {
+		log.Errorw("Failed to open mailbox for searching", err, "mailbox", mailbox)
 		return nil, err
 	}
 
@@ -66,6 +77,7 @@ func (conn *Client) Fetch(mailbox string, uids []uint32) ([]*Message, error) {
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, true, false); err != nil {
+		log.Errorw("Failed to open mailbox to fetching messages", err, "mailbox", mailbox)
 		return nil, err
 	}
 
@@ -88,12 +100,14 @@ func (conn *Client) Fetch(mailbox string, uids []uint32) ([]*Message, error) {
 
 	var err error
 	if err = <-done; err != nil {
+		log.Errorw("Failed to fetch message from mailbox", err, "mailbox", mailbox)
 		return nil, err
 	}
 
 	for imapMessage := range imapMessages {
 		parsedHeaders, err := parseMessageHeaders(imapMessage)
 		if err != nil {
+			log.Errorw("Failed to parse message headers", err, "mailbox", mailbox, "message_subject", imapMessage.Envelope.Subject, "message_id", imapMessage.Envelope.MessageId)
 			return nil, err
 		}
 		fetchedMails = append(fetchedMails, NewMessage(imapMessage, parsedHeaders))
@@ -120,6 +134,7 @@ func (conn *Client) SetFlags(mailbox string, uids []uint32, flagOp string, flags
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, false, false); err != nil {
+		log.Errorw("Failed to open mailbox to set message flags", err, "mailbox", mailbox)
 		return err
 	}
 
@@ -131,11 +146,15 @@ func (conn *Client) SetFlags(mailbox string, uids []uint32, flagOp string, flags
 	item := imapUtil.FormatFlagsOp(imapUtil.FlagsOp(flagOp), true)
 
 	if err := conn.client.UidStore(&seqset, item, flags, nil); err != nil {
+		log.Errorw("Failed to set message flags", err, "mailbox", mailbox)
 		return err
 	}
 
 	if expunge {
-		return conn.client.Expunge(nil) //TODO set & verify ch to check list of expunged mails
+		if err := conn.client.Expunge(nil); err != nil { //TODO set & verify ch to check list of expunged mails
+			log.Errorw("Failed to expunge after setting message flags", err, "mailbox", mailbox)
+			return err
+		}
 	}
 
 	return nil
@@ -147,6 +166,7 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, true, false); err != nil {
+		log.Errorw("Failed to open mailbox to get messages flags", err, "mailbox", mailbox)
 		return nil, err
 	}
 
@@ -162,6 +182,7 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 	}()
 
 	if err = <-done; err != nil {
+		log.Errorw("Failed to fetch message from mailbox", err, "mailbox", mailbox)
 		return nil, err
 	}
 
@@ -169,7 +190,7 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 		flags = msg.Flags
 	}
 
-	return flags, err
+	return flags, nil
 }
 
 // List mailboxes
@@ -185,7 +206,12 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 //}
 
 func (conn *Client) CreateMailbox(name string) error {
-	return conn.client.Create(name)
+	if err := conn.client.Create(name); err != nil {
+		log.Errorw("Failed to open mailbox to create mailbox", err, "mailbox", name)
+		return err
+	}
+
+	return nil
 }
 
 //func MoveMail(acc *config.Account, mailbox string, uid uint32) error {
@@ -226,6 +252,7 @@ func (conn *Client) Move(uids []uint32, from string, to string) error {
 
 	// Select mailbox
 	if _, err := conn.Select(from, false, false); err != nil {
+		log.Errorw("Failed to open mailbox to move messages", err, "source", from, "destination", to)
 		return err
 	}
 
@@ -239,12 +266,13 @@ func (conn *Client) Move(uids []uint32, from string, to string) error {
 			return err
 		}
 
-		if err = moveClient.UidMove(&seqset, to); err != nil {
-			return err
-		}
+		return conn.Move(uids, from, to)
+	} else if err != nil {
+		log.Errorw("Failed to move messages", err, "source", from, "destination", to)
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func (conn *Client) Select(mailbox string, readOnly bool, autoCreate bool) (*imapUtil.MailboxStatus, error) {

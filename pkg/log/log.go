@@ -66,11 +66,13 @@ func InitWithConfig(logConfig Config) error {
 	return err
 }
 
-func Error(msg string) {
-	_log.Error(msg)
+func Error(msg string, err error) {
+	_log.With("err", err).Error(msg)
 }
 
-func Errorw(msg string, context ...interface{}) {
+func Errorw(msg string, err error, context ...interface{}) {
+	context = append(context, "err")
+	context = append(context, err)
 	_log.With(context...).Error(msg)
 }
 

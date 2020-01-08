@@ -13,7 +13,6 @@ func ParseRuleSet(ruleSet config.RuleSet, headers imap.MessageHeaders) (bool, er
 	var err error
 
 	for _, rule := range ruleSet {
-		//fmt.Println("rule:", rule)
 		matched, err := parseRule(rule, headers)
 		if err != nil {
 			return false, err
@@ -33,7 +32,6 @@ func parseRule(rule config.Rule, headers imap.MessageHeaders) (bool, error) {
 	for op, patterns := range rule {
 		op = strings.ToLower(op)
 
-		//fmt.Printf("parseRule: %v >>>>> %v\n", rule, headers)
 		switch op {
 		case "or":
 			for _, pattern := range patterns {

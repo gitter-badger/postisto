@@ -20,8 +20,8 @@ func TestInitWithConfig(t *testing.T) {
 		log.Debugw("Testing a debug log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
 		log.Info("Testing an info log event.")
 		log.Infow("Testing an info log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
-		log.Error("Testing an error log event.")
-		log.Errorw("Testing an error log event.", "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
+		log.Error("Testing an error log event.", fmt.Errorf("test error"))
+		log.Errorw("Testing an error log event.", fmt.Errorf("test error"), "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
 	}
 
 	fmt.Println("Log with full user-defined log config (zap.Config)")

@@ -3,6 +3,7 @@ package filter
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/imap"
+	"github.com/arnisoph/postisto/pkg/log"
 )
 
 func GetUnsortedMsgs(imapClient *imap.Client, inputMailbox config.InputMailbox) ([]*imap.Message, error) {
@@ -17,6 +18,7 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 	for _, msg := range msgs {
 		var matched bool
 		for _, filterSet := range acc.FilterSet {
+			log.Debugw("Starting to evaluate rule set against message headers", "ruleSet", filterSet.RuleSet, "headers", msg.Headers)
 			matched, err = ParseRuleSet(filterSet.RuleSet, msg.Headers)
 
 			if err != nil {
@@ -24,9 +26,10 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 			}
 
 			if matched {
+				log.Infow("IT'S A MATCH! Apply commands to message via IMAP..", "message_id", msg.RawMessage.Envelope.MessageId, "cmd", filterSet.Commands)
 				err = RunCommands(imapClient, acc.InputMailbox.Mailbox, msg.RawMessage.Uid, filterSet.Commands)
 				if err != nil {
-					return nil, err //TODO
+					return nil, err
 				}
 			}
 		}
@@ -38,17 +41,17 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 
 	for _, msg := range remainingMsgs {
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
-			err = imapClient.SetFlags(acc.InputMailbox.Mailbox, []uint32{msg.RawMessage.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false)
-			if err != nil {
-				return nil, err //TODO
+			log.Infow("No filter matched to this message. Moving it to the fallbock mailbox.", "mailbox", acc.FallbackMailbox)
+			if err = imapClient.SetFlags(acc.InputMailbox.Mailbox, []uint32{msg.RawMessage.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false); err != nil {
+				return nil, err
 			}
 		} else {
-			err = imapClient.Move([]uint32{msg.RawMessage.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox)
-			if err != nil {
-				return nil, err //TODO
+			log.Infow("No filter matched to this message. Moving it to the fallbock mailbox.", "mailbox", acc.FallbackMailbox)
+			if err = imapClient.Move([]uint32{msg.RawMessage.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox); err != nil {
+				return nil, err
 			}
 		}
 	}
 
-	return remainingMsgs, err
+	return remainingMsgs, nil
 }

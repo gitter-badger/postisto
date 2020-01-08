@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	imapClient "github.com/emersion/go-imap/client"
-
+	"os"
 	"io/ioutil"
 )
 
@@ -57,8 +57,8 @@ func NewClient(connConfig config.ConnectionConfig) (*Client, error) {
 		return nil, err
 	}
 
-	if true { //TODO
-		//c.SetDebug(os.Stderr)
+	if connConfig.DebugIMAP {
+		c.SetDebug(os.Stderr)
 	}
 
 	if err = c.Login(connConfig.Username, connConfig.Password); err != nil {

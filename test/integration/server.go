@@ -37,8 +37,8 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
+			DebugIMAP:     false,
 		},
-		Debug: false,
 	}
 
 	redisClient, err := newRedisClient()

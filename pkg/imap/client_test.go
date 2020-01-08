@@ -39,10 +39,8 @@ func TestConnect(t *testing.T) {
 	}()
 
 	// ACTUAL TESTS BELOW
-
 	var err error
 
-	// connect to IMAP server
 	accs[0].client, err = imap.NewClient(accs[0].acc.Connection)
 	require.Nil(err)
 

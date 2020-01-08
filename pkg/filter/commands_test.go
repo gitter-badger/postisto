@@ -3,11 +3,9 @@ package filter_test
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/arnisoph/postisto/pkg/conn"
 	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/imap"
 	"github.com/arnisoph/postisto/test/integration"
-	"github.com/emersion/go-imap"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -19,11 +17,11 @@ func TestApplyCommands(t *testing.T) {
 	const numTestmails = 2
 
 	defer func() {
-		require.Nil(conn.Disconnect(acc.Connection.Client))
+		require.Nil(imap.Disconnect(acc.Connection.Client))
 	}()
 
 	var err error
-	acc.Connection.Client, err = conn.Connect(acc.Connection)
+	acc.Connection.Client, err = imap.Connect(acc.Connection)
 	require.Nil(err)
 
 	for i := 1; i <= numTestmails; i++ {

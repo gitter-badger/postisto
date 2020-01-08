@@ -48,11 +48,11 @@ func InitWithConfig(logConfig config.LogConfig) error {
 	}
 
 	rawLogger, err := cfg.Build()
-	defer rawLogger.Sync()
 
 	if err != nil {
 		return err
 	}
+	defer rawLogger.Sync()
 
 	_log = rawLogger.WithOptions(zap.AddCallerSkip(1)).Sugar() // pkg variable
 	Info("logging successfully initialized")

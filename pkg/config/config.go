@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"github.com/goccy/go-yaml"
 	"github.com/imdario/mergo"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -90,9 +90,7 @@ func (cfg *Config) validate() error {
 
 func (cfg *Config) setDefaults() {
 	// Accounts
-	for i := range cfg.Accounts {
-		acc := cfg.Accounts[i]
-
+	for _, acc := range cfg.Accounts {
 		// When not using IMAPS, enable STARTTLS by default
 		if !acc.Connection.IMAPS && acc.Connection.Starttls == nil {
 			var b bool
@@ -119,7 +117,7 @@ func (cfg *Config) setDefaults() {
 	// Filters
 
 	// Settings
-	if cfg.Settings.LogConfig.PreSetMode == "" && cfg.Settings.LogConfig.ZapConfig == nil {
+	if cfg.Settings.LogConfig.PreSetMode == "" && len(cfg.Settings.LogConfig.ZapConfig.OutputPaths) == 0 {
 		cfg.Settings.LogConfig.PreSetMode = "prod"
 	}
 }

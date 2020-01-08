@@ -17,7 +17,7 @@ type Config struct {
 
 type LogConfig struct {
 	PreSetMode string      `yaml:"mode"`
-	ZapConfig     *zap.Config `yaml:"config"`
+	ZapConfig     *zap.Config `yaml:"dangerousAdvancedZapConfig"`
 }
 
 type Account struct {

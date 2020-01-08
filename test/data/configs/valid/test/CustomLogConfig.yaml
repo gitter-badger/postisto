@@ -1,0 +1,17 @@
+settings:
+  logging:
+    dangerousAdvancedZapConfig:
+      level: debug
+      outputPaths:
+        - stdout
+      errorOutputPaths:
+        - stderr
+      encoding: console
+      encoderConfig:
+        timeKey: ts
+        timeEncoder: rfc3339nano
+        messageKey: message
+        levelKey: level
+        levelEncoder: lowercase
+      initialFields:
+        foo: bar

@@ -217,7 +217,7 @@ func (conn *Client) DeleteMailbox(name string) error {
 func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
 	var err error
 
-	mailboxesChan := make(chan *imapUtil.MailboxInfo, 1)
+	mailboxesChan := make(chan *imapUtil.MailboxInfo, 100)
 	done := make(chan error, 1)
 	go func() {
 		done <- conn.client.List("", "*", mailboxesChan)

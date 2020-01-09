@@ -66,6 +66,16 @@ func InitWithConfig(logConfig Config) error {
 	return err
 }
 
+func Panic(msg string, err error) {
+	log.With("err", err).Panic(msg)
+}
+
+func Panicw(msg string, err error, context ...interface{}) {
+	context = append(context, "err")
+	context = append(context, err)
+	log.With(context...).Panic(msg)
+}
+
 func Error(msg string, err error) {
 	log.With("err", err).Error(msg)
 }

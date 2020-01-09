@@ -122,7 +122,7 @@ func (cfg *Config) setDefaults() {
 			*acc.Connection.TLSVerify = true
 		}
 
-		if acc.InputMailbox == nil {
+		if acc.InputMailbox == nil || acc.InputMailbox.Mailbox == "" {
 			acc.InputMailbox = &InputMailbox{Mailbox: "INBOX", WithoutFlags: []string{"\\Seen", "\\Flagged"}}
 		}
 

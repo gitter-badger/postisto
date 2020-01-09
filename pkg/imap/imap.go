@@ -126,7 +126,7 @@ func (conn *Client) SearchAndFetch(mailbox string, withFlags []string, withoutFl
 	return conn.Fetch(mailbox, uids)
 }
 
-func (conn *Client) Delete(mailbox string, uids []uint32, expunge bool) error {
+func (conn *Client) DeleteMsgs(mailbox string, uids []uint32, expunge bool) error {
 	return conn.SetFlags(mailbox, uids, "+FLAGS", []interface{}{imapUtil.DeletedFlag}, expunge)
 }
 
@@ -193,24 +193,74 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 	return flags, nil
 }
 
-// List mailboxes
-//mailboxes := make(chan *imapUtil.MailboxInfo, 11)
-//done := make(chan error, 1)
-//go func() {
-//	done <- c.List("", "*", mailboxes)
-//}()
-
-//log.Println("Mailboxes:")
-//for m := range mailboxes {
-//	log.Println("* " + m.Name)
-//}
-
 func (conn *Client) CreateMailbox(name string) error {
+	log.Infow("Creating new mailbox", "mailbox", name)
 	if err := conn.client.Create(name); err != nil {
-		log.Errorw("Failed to open mailbox to create mailbox", err, "mailbox", name)
+		log.Errorw("Failed to create mailbox", err, "mailbox", name)
 		return err
 	}
 
+	return nil
+}
+
+func (conn *Client) DeleteMailbox(name string) error {
+	log.Infow("Deleting mailbox", "mailbox", name)
+	if err := conn.client.Delete(name); err != nil {
+		log.Errorw("Failed to delete mailbox ", err, "mailbox", name)
+		return err
+	}
+
+	return nil
+}
+
+// List mailboxes
+func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
+	var err error
+
+	mailboxesChan := make(chan *imapUtil.MailboxInfo, 1)
+	done := make(chan error, 1)
+	go func() {
+		done <- conn.client.List("", "*", mailboxesChan)
+	}()
+
+	if err = <-done; err != nil {
+		log.Error("Failed to list mailboxes", err)
+		return nil, err
+	}
+
+	mailboxes := map[string]imapUtil.MailboxInfo{}
+	for mailBox := range mailboxesChan {
+		mailboxes[mailBox.Name] = *mailBox
+	}
+
+	return mailboxes, nil
+}
+
+type Queue struct {
+	elements chan interface{}
+}
+
+func NewQueue(size int) *Queue {
+	return &Queue{
+		elements: make(chan interface{}, size),
+	}
+}
+
+func (queue *Queue) Push(element interface{}) {
+	select {
+	case queue.elements <- element:
+	default:
+		panic("Queue full")
+	}
+}
+
+func (queue *Queue) Pop() interface{} {
+	select {
+	case e := <-queue.elements:
+		return e
+	default:
+		panic("Queue empty")
+	}
 	return nil
 }
 
@@ -257,22 +307,33 @@ func (conn *Client) Move(uids []uint32, from string, to string) error {
 	}
 
 	moveClient := imapMoveUtil.NewClient(conn.client)
-
 	err = moveClient.UidMove(&seqset, to)
 
-	if err != nil && strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", to)) {
-		// MOVE failed because the target to did not exist. Create it and try again.
-		if err = conn.CreateMailbox(to); err != nil {
+	if err == nil {
+		return nil
+	}
+
+	// Move failed
+	if strings.Contains(err.Error(), "Mailbox doesn't exist") ||
+		strings.Contains(err.Error(), "No folder") {
+		mailBoxes, err := conn.List()
+		if err != nil {
+			log.Errorw("Failed to move messages after trying to get list of mailboxes", err, "source", from, "destination", to)
 			return err
 		}
 
-		return conn.Move(uids, from, to)
-	} else if err != nil {
-		log.Errorw("Failed to move messages", err, "source", from, "destination", to)
-		return err
+		if _, notFound := mailBoxes[to]; notFound == false {
+			// MOVE failed because the target to did not exist. Create it and try again.
+			if err := conn.CreateMailbox(to); err != nil {
+				return err
+			}
+
+			return conn.Move(uids, from, to)
+		}
 	}
 
-	return nil
+	log.Errorw("Failed to move messages for an unexpected reason", err, "source", from, "destination", to)
+	return err
 }
 
 func (conn *Client) Select(mailbox string, readOnly bool, autoCreate bool) (*imapUtil.MailboxStatus, error) {
@@ -288,7 +349,8 @@ func (conn *Client) Select(mailbox string, readOnly bool, autoCreate bool) (*ima
 	}
 
 	// Yes create and try SELECT again!
-	if strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) {
+	if strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) ||
+		strings.Contains(err.Error(), "Unknown Mailbox") {
 		// SELECT failed because the target to did not exist. Create it and try again.
 		if err = conn.CreateMailbox(mailbox); err != nil {
 			return nil, err

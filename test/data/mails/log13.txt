@@ -1,101 +1,117 @@
-Return-Path: <bounce-11045_HTML-44842668-18161-7218422-50839@bounce.s7.exacttarget.com>
-Delivered-To: <shubham@cyber.in>
-Received: from mail-storage-2.main-hosting.eu
-	by mail-storage-2 (Dovecot) with LMTP id VUviDhaNmVV5BgAA7jq/7w
-	for <shubham@cyberzonec.in>; Sun, 05 Jul 2015 20:01:38 +0000
-Received: from mx2.main-hosting.eu (mx-mailgw [10.0.25.254])
-	by mail-storage-2.main-hosting.eu (Postfix) with ESMTP id 70AFF2069084
-	for <shubham@cyberzonec.in>; Sun,  5 Jul 2015 20:01:38 +0000 (UTC)
-Received-SPF: Pass (sender SPF authorized) identity=mailfrom; client-ip=136.147.176.80; helo=cr80.mta.exacttarget.com; envelope-from=bounce-11045_html-44842668-18161-7218422-50839@bounce.s7.exacttarget.com; receiver=shubham@cyberzonec.in
-Authentication-Results: mx2.main-hosting.eu;
-	dkim=pass (1024-bit key) header.d=cilabs.com header.i=jenny@cilabs.com header.b=xZwjU+IA
-Received: from cr80.mta.exacttarget.com (cr80.mta.exacttarget.com [136.147.176.80])
-	by mx2.main-hosting.eu ([Main-Hosting.eu Mail System]) with ESMTPS id 2CC8A2EF425
-	for <shubham@cyberzonec.in>; Sun,  5 Jul 2015 20:01:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; s=200608; d=cilabs.com;
- h=Message-ID:Date:Subject:From:To:MIME-Version:Content-Type:List-Unsubscribe; i=jenny@cilabs.com;
- bh=lqdW4vAzs5kA8TqgSMvofKdFAoM=;
- b=xZwjU+IAgihVwUcTHqtQUQliPdyv5r+hFS99u4YFWirkvQhlz9yntyDQ9Mi+q/RsT4MQ0iUeeoFG
-   /EnSuP4Q5z2luC223Zn10NOAnUcWfDd0deHTn/ruyMb7m7yca1sxPRAN/0djHUa/b6z1SuMMuAjW
-   Yqn0lYpeeFBDeUgZfS4=
-Received: by cr80.mta.exacttarget.com id hj66i4163hst for <shubham@cyberzonec.in>; Sun, 5 Jul 2015 20:01:37 +0000 (envelope-from <bounce-11045_HTML-44842668-18161-7218422-50839@bounce.s7.exacttarget.com>)
-x-sender: undelivered+65682+82324388@pd25.com
-x-receiver: shubham@cyberzonec.in
-Received: from orionsmtp-120.s7.exacttarget.com (172.28.29.14) by QANV1IMS01.qa.local id hj66e41l1h0c for <shubham@cyberzonec.in>; Sun, 5 Jul 2015 14:00:34 -0600 (envelope-from <undelivered+65682+82324388@pd25.com>)
-Received: from localhost (localhost [127.0.0.1])
-	by orionsmtp-120.s7.exacttarget.com (Postfix) with ESMTP id B6A25122FB3
-	for <shubham@cyberzonec.in>; Sun,  5 Jul 2015 20:00:34 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at orionsmtp-120.s7.exacttarget.com
-Received: from orionsmtp-120.s7.exacttarget.com ([127.0.0.1])
-	by localhost (orionsmtp-120.s7.exacttarget.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id d1LXB36iDR2H for <shubham@cyberzonec.in>;
-	Sun,  5 Jul 2015 20:00:34 +0000 (UTC)
-Received: from [127.0.0.1] (unknown [75.126.66.62])
-	(Authenticated sender: pardot@s7)
-	by orionsmtp-120.s7.exacttarget.com (Postfix) with ESMTPSA id 8BF3D122F3D
-	for <shubham@cyberzonec.in>; Sun,  5 Jul 2015 20:00:34 +0000 (UTC)
-X-BeenThere: salt-users@googlegroups.com
-Date: Thu, 8 Oct 2015 02:32:45 -0700 (PDT)
+Return-Path: <bounce+161444.947b4-mail=arnoldbechtoldt.com@mg.gitlab.com>
+Delivered-To: mail@arnoldbechtoldt.com
+Received: from director-04.heinlein-hosting.de ([80.241.60.215])
+	by localhost with LMTP id 4AonOZQ+v1zAfQEA0J78UA
+	for <mail@arnoldbechtoldt.com>; Tue, 23 Apr 2019 18:34:29 +0200
+Received: from mx2.mailbox.org ([80.241.60.215])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	by director-04.heinlein-hosting.de with LMTP id IAcqNpQ+v1zeiQAAgupzMw
+	; Tue, 23 Apr 2019 18:34:28 +0200
+X-Virus-Scanned: amavisd-new at heinlein-support.de
+Authentication-Results: spamfilter02.heinlein-hosting.de (amavisd-new);
+	dkim=pass (1024-bit key) header.d=mg.gitlab.com
+X-policyd-weight: using cached result; rate: -5.5
+DKIM-Signature: a=rsa-sha256; v=1; c=relaxed/relaxed; d=mg.gitlab.com; q=dns/txt;
+ s=mailo; t=1556037257; h=List-Unsubscribe: List-Id:
+ Content-Transfer-Encoding: Content-Type: Mime-Version: Subject:
+ References: In-Reply-To: Message-ID: To: Reply-To: From: Date: Sender;
+ bh=FyXvSO26isdkZ7M/RtYQv+RYumutfSz883LX7reKIAw=; b=ZA5TL0OEq3OWHuT7jGkOPLCadmz90CU5+ACg3QYez8HpKZNaX6SO9UdeuM83YyftqIlppwvO
+ Acpi5n+PiGOJf/pAQNedeOD/TImNupCOXvBao5I1t/K64ZJPA1ENcHGeEkjR8jUwHpsPuU1B
+ 6acFtuF0Hq6WtwuYYrSTeG+TY1A=
+X-Mailgun-Sending-Ip: 192.237.158.143
+X-Mailgun-Sid: WyJmNTE5ZSIsICJtYWlsQGFybm9sZGJlY2h0b2xkdC5jb20iLCAiOTQ3YjQiXQ==
+Sender: gitlab@mg.gitlab.com
+Received: from mg.gitlab.com (29.112.196.35.bc.googleusercontent.com [35.196.112.29])
+ by mxa.mailgun.org with ESMTP id 5cbf3e88.7f18084b7f48-smtp-out-n02;
+ Tue, 23 Apr 2019 16:34:16 -0000 (UTC)
+Date: Tue, 23 Apr 2019 16:34:15 +0000
 From: =?UTF-8?B?5qKm6b6Z5ZGo?= <tuifeideyaozi@gmail.com>
-To: Salt-users <salt-users@googlegroups.com>
-Message-Id: <c87099e3-2e46-4861-83cf-cf76558ba60a@googlegroups.com>
-Subject: [salt-users] Does Tornado not support the wheel client requests?
-MIME-Version: 1.0
-Content-Type: multipart/mixed;
-    boundary="----=_Part_947_707548232.1444296765139"
-X-Original-Sender: tuifeideyaozi@gmail.com
-Reply-To: salt-users@googlegroups.com
-Precedence: list
-Mailing-list: list salt-users@googlegroups.com; contact salt-users+owners@googlegroups.com
-_List-ID: <salt-users.googlegroups.com>
-X-Spam-Checked-In-Group: salt-users@googlegroups.com
-X-Google-Group-Id: 473711971974
-List-Post: <http://groups.google.com/group/salt-users/post>, <mailto:salt-users@googlegroups.com>
-List-Help: <http://groups.google.com/support/>, <mailto:salt-users+help@googlegroups.com>
-List-Archive: <http://groups.google.com/group/salt-users
-Sender: salt-users@googlegroups.com
-List-Subscribe: <http://groups.google.com/group/salt-users/subscribe>, <mailto:salt-users+subscribe@googlegroups.com>
-List-Unsubscribe: <mailto:googlegroups-manage+473711971974+unsubscribe@googlegroups.com>,
- <http://groups.google.com/group/salt-users/subscribe>
-
-------=_Part_947_707548232.1444296765139
+Reply-To: "GitLab.org / gitlab-runner" <incoming+8766e997d26f6459fad2e69be88f9a95@incoming.gitlab.com>
+To: mail@arnoldbechtoldt.com
+Message-ID: <note_163465160@gitlab.com>
+In-Reply-To: <issue_4707101@gitlab.com>
+References: <reply-8766e997d26f6459fad2e69be88f9a95@gitlab.com>
+ <issue_4707101@gitlab.com>
+Subject: Re: gitlab-runner | Adding Services With Kubernetes Executor (#2229)
+Mime-Version: 1.0
 Content-Type: multipart/alternative;
-    boundary="----=_Part_948_457812281.1444296765139"
+ boundary="--==_mimepart_5cbf3e876d109_76573ffa780c0ec410876a";
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-GitLab-Project: gitlab-runner
+X-GitLab-Project-Id: 250833
+X-GitLab-Project-Path: gitlab-org/gitlab-runner
+List-Id: gitlab-org/gitlab-runner <250833.gitlab-runner.gitlab-org.gitlab.com>
+List-Unsubscribe: <https://gitlab.com/sent_notifications/8766e997d26f6459fad2e69be88f9a95/unsubscribe?force=true>,<mailto:incoming+8766e997d26f6459fad2e69be88f9a95-unsubscribe@incoming.gitlab.com>
+X-GitLab-Issue-ID: 4707101
+X-GitLab-Issue-IID: 2229
+X-GitLab-Reply-Key: 8766e997d26f6459fad2e69be88f9a95
+Auto-Submitted: auto-generated
+X-Auto-Response-Suppress: All
+X-Rspamd-Queue-Id: 59CF4A10E0
 
-------=_Part_948_457812281.1444296765139
-Content-Type: text/plain; charset=UTF-8
+
+----==_mimepart_5cbf3e876d109_76573ffa780c0ec410876a
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
 
 
-Works fine under Cherry but I get a 400 when using Tornado. Does Tornado not support the wheel client requests?
 
-thanks
+Ouch this is bad, the 127.0.0.1 worked for me but really I can understand that it takes time to fix the issue, but please update documentation asap !
 
 --
-You received this message because you are subscribed to the Google Groups "Salt-users" group.
-To unsubscribe from this group and stop receiving emails from it, send an email to salt-users+unsubscribe@googlegroups.com.
-For more options, visit https://groups.google.com/d/optout.
+Reply to this email directly or view it on GitLab: https://gitlab.com/gitlab-org/gitlab-runner/issues/2229#note_163465160
+You're receiving this email because of your account on gitlab.com.
 
-------=_Part_948_457812281.1444296765139
-Content-Type: text/html; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
 
-<div dir=3D"ltr"><pre style=3D"line-height: 24px; text-align: justify;">Wor=
-ks fine under Cherry but I get a 400 when using Tornado. Does Tornado not s=
-upport the wheel client requests? </pre><pre style=3D"line-height: 24px; te=
-xt-align: justify;">thanks</pre></div>
 
-<p></p>
+----==_mimepart_5cbf3e876d109_76573ffa780c0ec410876a
+Content-Type: text/html;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
--- <br />
-You received this message because you are subscribed to the Google Groups &=
-quot;Salt-users&quot; group.<br />
-To unsubscribe from this group and stop receiving emails from it, send an e=
-mail to <a href=3D"mailto:salt-users+unsubscribe@googlegroups.com">salt-use=
-rs+unsubscribe@googlegroups.com</a>.<br />
-For more options, visit <a href=3D"https://groups.google.com/d/optout">http=
-s://groups.google.com/d/optout</a>.<br />
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html lang="en">
+<head>
+<meta content="text/html; charset=US-ASCII" http-equiv="Content-Type">
+<title>
+GitLab
+</title>
 
-------=_Part_948_457812281.1444296765139--
-------=_Part_947_707548232.1444296765139--
+
+<style>img {
+max-width: 100%; height: auto;
+}
+</style>
+</head>
+<body>
+<div class="content">
+
+<div style="">
+<p dir="auto">Ouch this is bad, the 127.0.0.1 worked for me but really I can understand that it takes time to fix the issue, but please update documentation asap !</p>
+</div>
+
+
+</div>
+<div class="footer" style="margin-top: 10px;">
+<p style="font-size: small; color: #777;">
+&#8212;
+<br>
+Reply to this email directly or <a href="https://gitlab.com/gitlab-org/gitlab-runner/issues/2229#note_163465160">view it on GitLab</a>.
+<br>
+You're receiving this email because of your account on gitlab.com.
+If you'd like to receive fewer emails, you can
+<a href="https://gitlab.com/sent_notifications/8766e997d26f6459fad2e69be88f9a95/unsubscribe">unsubscribe</a>
+from this thread or
+adjust your notification settings.
+<script type="application/ld+json">{"@context":"http://schema.org","@type":"EmailMessage","action":{"@type":"ViewAction","name":"View Issue","url":"https://gitlab.com/gitlab-org/gitlab-runner/issues/2229#note_163465160"}}</script>
+
+</p>
+</div>
+</body>
+</html>
+
+----==_mimepart_5cbf3e876d109_76573ffa780c0ec410876a--
 

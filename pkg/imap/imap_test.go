@@ -191,16 +191,16 @@ func TestDeleteMails(t *testing.T) {
 	require.Nil(err)
 
 	// Delete one mail
-	err = client.Delete("does-not-exist", []uint32{fetchedMails[0].RawMessage.Uid}, true) // mailbox doesn't exist, can't be deleted
+	err = client.DeleteMsgs("does-not-exist", []uint32{fetchedMails[0].RawMessage.Uid}, true) // mailbox doesn't exist, can't be deleted
 	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: does-not-exist"))
 
-	err = client.Delete("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, false) // not moved yet, flag, don't expunge yet
+	err = client.DeleteMsgs("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, false) // not moved yet, flag, don't expunge yet
 	require.Nil(err)
 	flags, err := client.GetFlags("INBOX", fetchedMails[1].RawMessage.Uid)
 	require.Nil(err)
 	require.EqualValues([]string{imap.DeletedFlag}, flags)
-	err = client.Delete("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, true) // not moved yet, flag & expunge
+	err = client.DeleteMsgs("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, true) // not moved yet, flag & expunge
 	require.Nil(err)
 
 	var uids []uint32

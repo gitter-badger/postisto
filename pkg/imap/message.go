@@ -45,6 +45,11 @@ func parseMessageHeaders(rawMessage *imapUtil.Message) (MessageHeaders, error) {
 		if err != nil {
 			return nil, err
 		} else {
+			if parsedList == "" {
+				// no need to set non-existant fields
+				continue
+			}
+
 			headers[fieldName] = parsedList
 		}
 	}
@@ -116,13 +121,12 @@ func parseAddrList(mr *mailUtil.Reader, fieldName string, fallback string) (stri
 	addrs, err := mr.Header.AddressList(fieldName)
 
 	if addrs == nil {
-		//fmt.Println("yo", fieldName)
 		// parsing failed, so return own or externally set fallback
 		f := mr.Header.FieldsByKey(fieldName)
 		if !f.Next() {
 			return "", err
 		} else {
-			return fallback, nil
+			return strings.TrimSpace(fallback), nil
 		}
 	}
 
@@ -139,7 +143,7 @@ func parseAddrList(mr *mailUtil.Reader, fieldName string, fallback string) (stri
 		fieldValue += formattedAddr
 	}
 
-	return fieldValue, err
+	return strings.TrimSpace(fieldValue), err
 }
 
 func contains(s []string, e string) bool { //TODO do we really need to implement this?

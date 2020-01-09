@@ -25,7 +25,7 @@ func TestUploadMails(t *testing.T) {
 	// ACTUAL TESTS BELOW
 
 	require.EqualError(client.Upload("does-not-exit.txt", "INBOX", []string{}), "open does-not-exit.txt: no such file or directory")
-	require.Error(client.Upload("../../test/data/mails/empty-mail.txt", "INBOX", []string{}))
+	require.Error(client.Upload("../../test/data/mails/empty-mail.txt", "INBOX", []string{})) //TODO flags/gmail?
 }
 
 func TestSearchAndFetchMails(t *testing.T) {

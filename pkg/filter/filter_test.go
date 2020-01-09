@@ -160,7 +160,7 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 			require.NotNil(imapClient)
 			require.NotNil(acc)
 			require.NotNil(acc.InputMailbox)
-			require.Nil(imapClient.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, []string{}), debugInfo)
+			require.Nil(imapClient.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, nil), debugInfo)
 
 			var withoutFlags []string
 			if !strings.Contains(acc.Connection.Server, "gmail") { // gmail does some extra magic, marking (some) new messages as "important"....
@@ -172,13 +172,18 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 			require.NoError(err)
 			require.Len(uploadedMails, i+1, fmt.Sprintf("This (#%v) or one of the previous mail uploads failed!", i+1), debugInfo)
+
+			if strings.Contains(acc.Connection.Server, "gmail") {
+				//gmail flaggs APPENDed msgs. I don't know yet why.. //TODO
+				require.NoError(imapClient.SetFlags(acc.InputMailbox.Mailbox, uploadedMails, "-FLAGS", []interface{}{imap.FlaggedFlag}, false))
+			}
 		}
 
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
 		err = filter.EvaluateFilterSetsOnMsgs(imapClient, *acc)
-		require.Nil(err, debugInfo)
+		require.Nil(err, debugInfo) //TODO replace to NoError
 
 		fallbackMethod := "moving"
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {

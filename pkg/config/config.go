@@ -130,6 +130,10 @@ func (cfg *Config) setDefaults() {
 			fallback := "INBOX"
 			acc.FallbackMailbox = &fallback
 		}
+
+		if acc.InputMailbox.Mailbox == *acc.FallbackMailbox && len(acc.InputMailbox.WithoutFlags) == 0 {
+			acc.InputMailbox.WithoutFlags = []string{"\\Seen", "\\Flagged"}
+		}
 	}
 
 	// Filters

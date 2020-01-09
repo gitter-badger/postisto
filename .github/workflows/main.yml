@@ -45,6 +45,9 @@ jobs:
           docker run -d -p 10143:143 -p 10993:993 -p 6379:6379 -v /dev/random:/dev/random:ro --name postisto-test-server bechtoldt/tabellarius_tests-docker || true
 
       - name: go test
+        env:
+          POSTISTO_GMAIL_TEST_ACC_USERNAME: ${{ secrets.POSTISTO_GMAIL_TEST_ACC_USERNAME }}
+          POSTISTO_GMAIL_TEST_ACC_PASSWORD: ${{ secrets.POSTISTO_GMAIL_TEST_ACC_PASSWORD }}
         run: |
           go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 

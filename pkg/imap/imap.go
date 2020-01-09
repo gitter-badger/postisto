@@ -229,18 +229,9 @@ func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
 	}
 
 	mailboxes := map[string]imapUtil.MailboxInfo{}
-
-	select {
-	case mailBox := <-mailboxesChan:
+	for mailBox := range mailboxesChan {
 		mailboxes[mailBox.Name] = *mailBox
-	case <-time.After(500 * time.Millisecond):
-		close(mailboxesChang)
 	}
-
-	//mailboxes := map[string]imapUtil.MailboxInfo{}
-	//for mailBox := range mailboxesChan {
-	//	mailboxes[mailBox.Name] = *mailBox
-	//}
 
 	return mailboxes, nil
 }

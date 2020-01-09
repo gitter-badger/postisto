@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var _log *zap.SugaredLogger
+var log *zap.SugaredLogger
 
 type Config struct {
 	PreSetMode string      `yaml:"mode"`
@@ -23,7 +23,7 @@ func init() {
 }
 
 func InitWithConfig(logConfig Config) error {
-	if _log != nil {
+	if log != nil {
 		Debug("Logger already initialized. Will re-initialize now..")
 	}
 
@@ -60,34 +60,34 @@ func InitWithConfig(logConfig Config) error {
 	}
 	defer rawLogger.Sync()
 
-	_log = rawLogger.WithOptions(zap.AddCallerSkip(1)).Sugar() // pkg variable
+	log = rawLogger.WithOptions(zap.AddCallerSkip(1)).Sugar() // pkg variable
 	Info("logging successfully initialized")
 
 	return err
 }
 
 func Error(msg string, err error) {
-	_log.With("err", err).Error(msg)
+	log.With("err", err).Error(msg)
 }
 
 func Errorw(msg string, err error, context ...interface{}) {
 	context = append(context, "err")
 	context = append(context, err)
-	_log.With(context...).Error(msg)
+	log.With(context...).Error(msg)
 }
 
 func Info(msg string) {
-	_log.Info(msg)
+	log.Info(msg)
 }
 
 func Infow(msg string, context ...interface{}) {
-	_log.With(context...).Info(msg)
+	log.With(context...).Info(msg)
 }
 
 func Debug(msg string) {
-	_log.Debug(msg)
+	log.Debug(msg)
 }
 
 func Debugw(msg string, context ...interface{}) {
-	_log.With(context...).Debug(msg)
+	log.With(context...).Debug(msg)
 }

@@ -10,7 +10,7 @@ func GetUnsortedMsgs(imapClient *imap.Client, inputMailbox config.InputMailbox) 
 	return imapClient.SearchAndFetch(inputMailbox.Mailbox, nil, inputMailbox.WithoutFlags)
 }
 
-func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*imap.Message, error) {
+func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) error {
 
 	var remainingMsgs []*imap.Message
 	msgs, err := GetUnsortedMsgs(imapClient, *acc.InputMailbox)
@@ -24,7 +24,7 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 			matched, err = ParseRuleSet(filterSet.RuleSet, msg.Headers)
 
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			if !matched {
@@ -35,7 +35,7 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 			err = RunCommands(imapClient, acc.InputMailbox.Mailbox, msg.RawMessage.Uid, filterSet.Commands)
 			if err != nil {
 				log.Errorw("Failed to run command on matched message", err, "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId, "cmd", filterSet.Commands)
-				return nil, err
+				return err
 			}
 
 			break
@@ -51,15 +51,15 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
 			log.Infow("No filter matched to this message. Flagging the message now.", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId)
 			if err := imapClient.SetFlags(acc.InputMailbox.Mailbox, []uint32{msg.RawMessage.Uid}, "+FLAGS", []interface{}{imap.FlaggedFlag}, false); err != nil {
-				return nil, err
+				return err
 			}
 		} else {
 			log.Infow("No filter matched to this message. Moving it to the fallback mailbox now.", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId, "mailbox", acc.FallbackMailbox)
 			if err := imapClient.Move([]uint32{msg.RawMessage.Uid}, acc.InputMailbox.Mailbox, *acc.FallbackMailbox); err != nil {
-				return nil, err
+				return err
 			}
 		}
 	}
 
-	return remainingMsgs, nil
+	return nil
 }

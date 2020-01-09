@@ -177,7 +177,7 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
-		_, err = filter.EvaluateFilterSetsOnMsgs(imapClient, *acc)
+		err = filter.EvaluateFilterSetsOnMsgs(imapClient, *acc)
 		require.Nil(err, debugInfo)
 
 		fallbackMethod := "moving"

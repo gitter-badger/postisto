@@ -18,7 +18,7 @@ func EvaluateFilterSetsOnMsgs(imapClient *imap.Client, acc config.Account) ([]*i
 	for _, msg := range msgs {
 		var matched bool
 
-		log.Debugw("Starting to filter message", "uid", msg.RawMessage.Uid,  "message_id", msg.RawMessage.Envelope.MessageId, "headers", msg.Headers)
+		log.Debugw("Starting to filter message", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId, "headers", msg.Headers)
 		for _, filterSet := range acc.FilterSet {
 			log.Debugw("Evaluate rule set against message headers", "uid", msg.RawMessage.Uid, "ruleSet", filterSet.RuleSet)
 			matched, err = ParseRuleSet(filterSet.RuleSet, msg.Headers)

@@ -236,34 +236,6 @@ func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
 	return mailboxes, nil
 }
 
-type Queue struct {
-	elements chan interface{}
-}
-
-func NewQueue(size int) *Queue {
-	return &Queue{
-		elements: make(chan interface{}, size),
-	}
-}
-
-func (queue *Queue) Push(element interface{}) {
-	select {
-	case queue.elements <- element:
-	default:
-		panic("Queue full")
-	}
-}
-
-func (queue *Queue) Pop() interface{} {
-	select {
-	case e := <-queue.elements:
-		return e
-	default:
-		panic("Queue empty")
-	}
-	return nil
-}
-
 //func MoveMail(acc *config.Account, mailbox string, uid uint32) error {
 //	// Move BY COPYing and Deleting it
 //	var err error

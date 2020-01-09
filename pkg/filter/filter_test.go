@@ -164,14 +164,14 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 			var withoutFlags []string
 			if !strings.Contains(acc.Connection.Server, "gmail") { // gmail does some extra magic, marking (some) new messages as "important"....
-				withoutFlags = append(withoutFlags,imap.FlaggedFlag)
+				withoutFlags = append(withoutFlags, imap.FlaggedFlag)
 			}
 
 			// verify upload
-			uploadedMails, err :=imapClient.Search(acc.InputMailbox.Mailbox, nil, withoutFlags)
+			uploadedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, withoutFlags)
 
 			require.NoError(err)
-			require.Len(uploadedMails, i+1, fmt.Sprintf("This (#%v) or one of the previous mail uploads failed!",i+1),debugInfo)
+			require.Len(uploadedMails, i+1, fmt.Sprintf("This (#%v) or one of the previous mail uploads failed!", i+1), debugInfo)
 		}
 
 		// ACTUAL TESTS BELOW
@@ -180,7 +180,6 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		_, err = filter.EvaluateFilterSetsOnMsgs(imapClient, *acc)
 		require.Nil(err, debugInfo)
 
-
 		fallbackMethod := "moving"
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
 			fallbackMethod = "flagging"
@@ -188,9 +187,9 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 		// Verify Source
 		if fallbackMethod == "flagging" {
-				fetchedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, []string{imap.FlaggedFlag})
-				require.Nil(err, debugInfo)
-				require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
+			fetchedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, []string{imap.FlaggedFlag})
+			require.Nil(err, debugInfo)
+			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
 		} else {
 			// fallback = moving
 			fetchedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, nil)

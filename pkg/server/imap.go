@@ -223,7 +223,7 @@ func (conn *Connection) List() (map[string]imapUtil.MailboxInfo, error) {
 	mailboxes := map[string]imapUtil.MailboxInfo{}
 
 	done := false
-	for ; !done; {
+	for !done {
 		select {
 		case err := <-errs:
 			if err != nil {

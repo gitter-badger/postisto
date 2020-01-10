@@ -1,8 +1,7 @@
 package filter
 
 import (
-	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/arnisoph/postisto/pkg/imap"
+	"github.com/arnisoph/postisto/pkg/server"
 )
 
 //type UnknownCommandTypeError struct {
@@ -21,12 +20,12 @@ import (
 //	return fmt.Sprintf("Bad command target %q", err.targetName)
 //}
 
-func RunCommands(conn *imap.Client, from string, uid uint32, cmds config.FilterOps) error {
+func RunCommands(srv *server.Connection, from string, uid uint32, cmds FilterOps) error {
 	var err error
 	uids := []uint32{uid}
 
 	if cmds["move"] != nil {
-		if err := conn.Move(uids, from, cmds["move"].(string)); err != nil {
+		if err := srv.Move(uids, from, cmds["move"].(string)); err != nil {
 			return err
 		}
 	}
@@ -37,19 +36,19 @@ func RunCommands(conn *imap.Client, from string, uid uint32, cmds config.FilterO
 	}
 
 	if cmds["add_flags"] != nil {
-		if err := conn.SetFlags(to, uids, "+FLAGS", cmds["add_flags"].([]interface{}), false); err != nil {
+		if err := srv.SetFlags(to, uids, "+FLAGS", cmds["add_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}
 
 	if cmds["remove_flags"] != nil {
-		if err := conn.SetFlags(to, uids, "-FLAGS", cmds["remove_flags"].([]interface{}), false); err != nil {
+		if err := srv.SetFlags(to, uids, "-FLAGS", cmds["remove_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}
 
 	if cmds["replace_all_flags"] != nil {
-		if err := conn.SetFlags(to, uids, "FLAGS", cmds["replace_all_flags"].([]interface{}), false); err != nil {
+		if err := srv.SetFlags(to, uids, "FLAGS", cmds["replace_all_flags"].([]interface{}), false); err != nil {
 			return err
 		}
 	}

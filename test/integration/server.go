@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/redis.v4"
 	"math/rand"
@@ -23,11 +24,7 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 	}
 
 	acc := config.Account{
-		InputMailbox: &config.InputMailbox{
-			Mailbox:      "INBOX",
-			WithoutFlags: []string{"\\Seen", "\\Flagged"},
-		},
-		Connection: config.ConnectionConfig{
+		Connection: server.Connection{
 			Enabled:  true,
 			Server:   "localhost",
 			Port:     port,
@@ -39,6 +36,10 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
 			DebugIMAP:     false,
+		},
+		InputMailbox: &config.InputMailboxConfig{
+			Mailbox:      "INBOX",
+			WithoutFlags: []string{"\\Seen", "\\Flagged"},
 		},
 	}
 

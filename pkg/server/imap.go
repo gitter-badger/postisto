@@ -1,4 +1,4 @@
-package imap
+package server
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ const (
 	RecentFlag   = "\\Recent"
 )
 
-func (conn *Client) Upload(file string, mailbox string, flags []string) error {
+func (conn *Connection) Upload(file string, mailbox string, flags []string) error {
 	data, err := os.Open(file)
 	defer data.Close()
 
@@ -44,7 +44,7 @@ func (conn *Client) Upload(file string, mailbox string, flags []string) error {
 	}
 
 	// Upload (APPEND)
-	if err = conn.client.Append(mailbox, flags, time.Now(), msg); err != nil {
+	if err = conn.imapClient.Append(mailbox, flags, time.Now(), msg); err != nil {
 		log.Errorw("Failed to upload message to mailbox", err, "mailbox", mailbox)
 		return err
 	}
@@ -52,7 +52,7 @@ func (conn *Client) Upload(file string, mailbox string, flags []string) error {
 	return nil
 }
 
-func (conn *Client) Search(mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
+func (conn *Connection) Search(mailbox string, withFlags []string, withoutFlags []string) ([]uint32, error) {
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, true, false); err != nil {
@@ -70,10 +70,10 @@ func (conn *Client) Search(mailbox string, withFlags []string, withoutFlags []st
 	}
 
 	// Actually search
-	return conn.client.UidSearch(criteria)
+	return conn.imapClient.UidSearch(criteria)
 }
 
-func (conn *Client) Fetch(mailbox string, uids []uint32) ([]*Message, error) {
+func (conn *Connection) Fetch(mailbox string, uids []uint32) ([]*Message, error) {
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, true, false); err != nil {
@@ -95,7 +95,7 @@ func (conn *Client) Fetch(mailbox string, uids []uint32) ([]*Message, error) {
 	imapMessages := make(chan *imapUtil.Message, len(uids))
 	done := make(chan error, 1)
 	go func() {
-		done <- conn.client.UidFetch(&seqset, items, imapMessages)
+		done <- conn.imapClient.UidFetch(&seqset, items, imapMessages)
 	}()
 
 	var err error
@@ -116,7 +116,7 @@ func (conn *Client) Fetch(mailbox string, uids []uint32) ([]*Message, error) {
 	return fetchedMails, err
 }
 
-func (conn *Client) SearchAndFetch(mailbox string, withFlags []string, withoutFlags []string) ([]*Message, error) {
+func (conn *Connection) SearchAndFetch(mailbox string, withFlags []string, withoutFlags []string) ([]*Message, error) {
 	uids, err := conn.Search(mailbox, withFlags, withoutFlags)
 
 	if err != nil || len(uids) == 0 {
@@ -126,11 +126,11 @@ func (conn *Client) SearchAndFetch(mailbox string, withFlags []string, withoutFl
 	return conn.Fetch(mailbox, uids)
 }
 
-func (conn *Client) DeleteMsgs(mailbox string, uids []uint32, expunge bool) error {
+func (conn *Connection) DeleteMsgs(mailbox string, uids []uint32, expunge bool) error {
 	return conn.SetFlags(mailbox, uids, "+FLAGS", []interface{}{imapUtil.DeletedFlag}, expunge)
 }
 
-func (conn *Client) SetFlags(mailbox string, uids []uint32, flagOp string, flags []interface{}, expunge bool) error {
+func (conn *Connection) SetFlags(mailbox string, uids []uint32, flagOp string, flags []interface{}, expunge bool) error {
 
 	// Select mailbox
 	if _, err := conn.Select(mailbox, false, false); err != nil {
@@ -145,13 +145,13 @@ func (conn *Client) SetFlags(mailbox string, uids []uint32, flagOp string, flags
 
 	item := imapUtil.FormatFlagsOp(imapUtil.FlagsOp(flagOp), true)
 
-	if err := conn.client.UidStore(&seqset, item, flags, nil); err != nil {
+	if err := conn.imapClient.UidStore(&seqset, item, flags, nil); err != nil {
 		log.Errorw("Failed to set message flags", err, "mailbox", mailbox)
 		return err
 	}
 
 	if expunge {
-		if err := conn.client.Expunge(nil); err != nil {
+		if err := conn.imapClient.Expunge(nil); err != nil {
 			log.Errorw("Failed to expunge after setting message flags", err, "mailbox", mailbox)
 			return err
 		}
@@ -160,7 +160,7 @@ func (conn *Client) SetFlags(mailbox string, uids []uint32, flagOp string, flags
 	return nil
 }
 
-func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
+func (conn *Connection) GetFlags(mailbox string, uid uint32) ([]string, error) {
 	var flags []string
 	var err error
 
@@ -178,7 +178,7 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 	imapMessages := make(chan *imapUtil.Message, 1)
 	done := make(chan error, 1)
 	go func() {
-		done <- conn.client.UidFetch(&seqset, items, imapMessages)
+		done <- conn.imapClient.UidFetch(&seqset, items, imapMessages)
 	}()
 
 	if err = <-done; err != nil {
@@ -193,9 +193,9 @@ func (conn *Client) GetFlags(mailbox string, uid uint32) ([]string, error) {
 	return flags, nil
 }
 
-func (conn *Client) CreateMailbox(name string) error {
+func (conn *Connection) CreateMailbox(name string) error {
 	log.Infow("Creating new mailbox", "mailbox", name)
-	if err := conn.client.Create(name); err != nil {
+	if err := conn.imapClient.Create(name); err != nil {
 		log.Errorw("Failed to create mailbox", err, "mailbox", name)
 		return err
 	}
@@ -203,9 +203,9 @@ func (conn *Client) CreateMailbox(name string) error {
 	return nil
 }
 
-func (conn *Client) DeleteMailbox(name string) error {
+func (conn *Connection) DeleteMailbox(name string) error {
 	log.Infow("Deleting mailbox", "mailbox", name)
-	if err := conn.client.Delete(name); err != nil {
+	if err := conn.imapClient.Delete(name); err != nil {
 		log.Errorw("Failed to delete mailbox ", err, "mailbox", name)
 		return err
 	}
@@ -214,13 +214,13 @@ func (conn *Client) DeleteMailbox(name string) error {
 }
 
 // List mailboxes
-func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
+func (conn *Connection) List() (map[string]imapUtil.MailboxInfo, error) {
 	var err error
 
 	mailboxesChan := make(chan *imapUtil.MailboxInfo, 100)
 	done := make(chan error, 1)
 	go func() {
-		done <- conn.client.List("", "*", mailboxesChan)
+		done <- conn.imapClient.List("", "*", mailboxesChan)
 	}()
 
 	if err = <-done; err != nil {
@@ -242,7 +242,7 @@ func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
 //	seqset := imapUtil.SeqSet{}
 //	seqset.AddNum(uid)
 //
-//	if err := acc.Client.Client.Copy(&seqset, mailbox); err != nil {
+//	if err := acc.Connection.Connection.Copy(&seqset, mailbox); err != nil {
 //		if strings.HasPrefix(err.Error(), fmt.Sprintf("Mailbox doesn't exist: %v", mailbox)) {
 //			// COPY failed becuase the target mailbox doesn't exist. Create it.
 //			if err := CreateMailbox(acc, mailbox); err != nil {
@@ -250,7 +250,7 @@ func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
 //			}
 //
 //			// Now retry COPY
-//			if err := acc.Client.Client.Copy(&seqset, mailbox); err != nil {
+//			if err := acc.Connection.Connection.Copy(&seqset, mailbox); err != nil {
 //				return err
 //			}
 //		}
@@ -264,7 +264,7 @@ func (conn *Client) List() (map[string]imapUtil.MailboxInfo, error) {
 //	return err
 //}
 
-func (conn *Client) Move(uids []uint32, from string, to string) error {
+func (conn *Connection) Move(uids []uint32, from string, to string) error {
 	var err error
 
 	seqset := imapUtil.SeqSet{}
@@ -278,7 +278,7 @@ func (conn *Client) Move(uids []uint32, from string, to string) error {
 		return err
 	}
 
-	moveClient := imapMoveUtil.NewClient(conn.client)
+	moveClient := imapMoveUtil.NewClient(conn.imapClient)
 	err = moveClient.UidMove(&seqset, to)
 
 	if err == nil {
@@ -308,8 +308,8 @@ func (conn *Client) Move(uids []uint32, from string, to string) error {
 	return err
 }
 
-func (conn *Client) Select(mailbox string, readOnly bool, autoCreate bool) (*imapUtil.MailboxStatus, error) {
-	status, err := conn.client.Select(mailbox, readOnly)
+func (conn *Connection) Select(mailbox string, readOnly bool, autoCreate bool) (*imapUtil.MailboxStatus, error) {
+	status, err := conn.imapClient.Select(mailbox, readOnly)
 
 	if err == nil {
 		return status, err

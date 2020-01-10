@@ -1,5 +1,7 @@
-vendor/
+*.tmp
 /postisto
 coverage.txt
+test/data/configs/examples/**/*.yaml
+test/data/configs/examples/**/*.yml
 test/data/configs/invalid-unreadable-file/
-*.tmp
+vendor/

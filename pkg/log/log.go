@@ -34,12 +34,10 @@ func InitWithConfig(logConfig Config) error {
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
-		config.DisableStacktrace = true
 		cfg = &config
 	case "dev":
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-		config.DisableStacktrace = true
 		cfg = &config
 	case "prod":
 		config := zap.NewProductionConfig()
@@ -53,6 +51,7 @@ func InitWithConfig(logConfig Config) error {
 		cfg = logConfig.ZapConfig
 	}
 
+	cfg.DisableStacktrace = true
 	rawLogger, err := cfg.Build()
 
 	if err != nil {
@@ -74,6 +73,16 @@ func Panicw(msg string, err error, context ...interface{}) {
 	context = append(context, "err")
 	context = append(context, err)
 	log.With(context...).Panic(msg)
+}
+
+func Fatal(msg string, err error) {
+	log.With("err", err).Fatal(msg)
+}
+
+func Fatalw(msg string, err error, context ...interface{}) {
+	context = append(context, "err")
+	context = append(context, err)
+	log.With(context...).Fatal(msg)
 }
 
 func Error(msg string, err error) {

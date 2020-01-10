@@ -2,14 +2,13 @@ package filter
 
 import (
 	"fmt"
-	"github.com/arnisoph/postisto/pkg/config"
-	"github.com/arnisoph/postisto/pkg/imap"
+	"github.com/arnisoph/postisto/pkg/server"
 	"reflect"
 	"regexp"
 	"strings"
 )
 
-func ParseRuleSet(ruleSet config.RuleSet, headers imap.MessageHeaders) (bool, error) {
+func ParseRuleSet(ruleSet RuleSet, headers server.MessageHeaders) (bool, error) {
 	var err error
 
 	for _, rule := range ruleSet {
@@ -26,7 +25,7 @@ func ParseRuleSet(ruleSet config.RuleSet, headers imap.MessageHeaders) (bool, er
 	return false, err
 }
 
-func parseRuleAgainstHeaders(rule config.Rule, headers imap.MessageHeaders) (bool, error) {
+func parseRuleAgainstHeaders(rule Rule, headers server.MessageHeaders) (bool, error) {
 	var err error
 
 	for op, patterns := range rule {

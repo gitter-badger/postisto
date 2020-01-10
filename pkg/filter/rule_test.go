@@ -3,7 +3,7 @@ package filter_test
 import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/filter"
-	"github.com/arnisoph/postisto/pkg/imap"
+	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	"strings"
@@ -16,14 +16,14 @@ func TestParseRuleSet(t *testing.T) {
 	// ACTUAL TESTS BELOW
 
 	ruleParserTests := []struct {
-		filters       config.FilterSet
+		filters       map[string]filter.Filter
 		matchExpected bool
 		err           string
 	}{
 		{
-			filters: config.FilterSet{
-				"simple 1o1 comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"simple 1o1 comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
 								{"from": "foo@example.com"},
@@ -35,9 +35,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"simple 101 comparison in or": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"simple 101 comparison in or": {		
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
 								{"from": "oO"},
@@ -50,9 +50,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"failing simple comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"failing simple comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{{"from": "wrong value"}},
 						},
@@ -62,9 +62,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"comparison with uppercase text": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"comparison with uppercase text": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{
 								{"from": "foo@example.com"},
@@ -77,9 +77,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"failing and comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"failing and comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{
 								{"from": "you"},
@@ -92,9 +92,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"failing or comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"failing or comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
 								{"from": "you"},
@@ -107,9 +107,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"failing with unsupported op": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"failing with unsupported op": {
+					RuleSet: filter.RuleSet{
 						{
 							"non-existent-op": []map[string]interface{}{
 								{"from": "you"},
@@ -123,39 +123,39 @@ func TestParseRuleSet(t *testing.T) {
 			err:           `rule operator "non-existent-op" is unsupported`,
 		},
 		{
-			filters: config.FilterSet{
-				"invalid value type": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"invalid value type": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
-								{"from": config.ConnectionConfig{}},
+								{"from": server.Connection{}},
 							},
 						},
 					},
 				},
 			},
 			matchExpected: false,
-			err:           `unsupported value type config.ConnectionConfig`,
+			err:           `unsupported value type server.Connection`,
 		},
 		{
-			filters: config.FilterSet{
-				"invalid nested value type": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"invalid nested value type": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
-								{"from": []interface{}{"wrong1", "wrong2", "42", []interface{}{config.ConnectionConfig{}}}},
+								{"from": []interface{}{"wrong1", "wrong2", "42", []interface{}{server.Connection{}}}},
 							},
 						},
 					},
 				},
 			},
 			matchExpected: false,
-			err:           `unsupported value type config.ConnectionConfig`,
+			err:           `unsupported value type server.Connection`,
 		},
 		{
-			filters: config.FilterSet{
-				"substring comparison with and": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"substring comparison with and": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"from": "@example.com"}},
 						},
@@ -165,9 +165,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"substring comparison with or": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"substring comparison with or": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{{"from": "@example.com"}},
 						},
@@ -177,9 +177,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"failing on search for empty header": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"failing on search for empty header": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"from": ""}},
 						},
@@ -189,9 +189,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"successfully searching for empty header": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"successfully searching for empty header": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"empty-header": ""}},
 						},
@@ -201,9 +201,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"testing with ütf-8": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"testing with ütf-8": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"subject": "löv"}},
 						},
@@ -213,9 +213,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"uppercase in rule + substring comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"uppercase in rule + substring comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"from": "@EXAMPLE.COM"}},
 						},
@@ -225,9 +225,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"uppercase in header comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"uppercase in header comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"to": "@example.com"}},
 						},
@@ -237,9 +237,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"regex comparison": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"regex comparison": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{
 								{"subject": "löve$"},
@@ -259,9 +259,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"comparison with bad regex (and)": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"comparison with bad regex (and)": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{{"tO": "!^\\ü^@example.com"}},
 						},
@@ -272,9 +272,9 @@ func TestParseRuleSet(t *testing.T) {
 			err:           "error parsing regexp: invalid escape sequence: `\\ü`",
 		},
 		{
-			filters: config.FilterSet{
-				"comparison with bad regex (or)": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"comparison with bad regex (or)": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{{"to": "!^\\ü^@example.com"}},
 						},
@@ -285,9 +285,9 @@ func TestParseRuleSet(t *testing.T) {
 			err:           "error parsing regexp: invalid escape sequence: `\\ü`",
 		},
 		{
-			filters: config.FilterSet{
-				"several rules in ruleSet success": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"several rules in ruleSet success": {
+					RuleSet: filter.RuleSet{
 						{"and": []map[string]interface{}{{"to": "@example.com"}}},
 						{"or": []map[string]interface{}{{"subject": "löv"}}},
 						{"and": []map[string]interface{}{{"from": ""}}},
@@ -297,9 +297,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"several rules in ruleSet failing": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"several rules in ruleSet failing": {
+					RuleSet: filter.RuleSet{
 						{"and": []map[string]interface{}{{"to": "@examplde.com"}}},
 						{"or": []map[string]interface{}{{"sUbject": "löasdv"}}},
 						{"and": []map[string]interface{}{{"from": ""}}},
@@ -309,9 +309,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"1o1 comparison with multiple values": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"1o1 comparison with multiple values": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
 								{"froM": []string{"foo@example.com", "example.com", "foo"}},
@@ -323,9 +323,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"101 comparison in or with multiple values": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"101 comparison in or with multiple values": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
 								{"froM": "oO"},
@@ -338,9 +338,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: true,
 		},
 		{
-			filters: config.FilterSet{
-				"101 comparison in OR with multiple values (failing)": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"101 comparison in OR with multiple values (failing)": {
+					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{
 								{"From": "baz"},
@@ -353,9 +353,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"101 comparison in AND with multiple values (failing)": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"101 comparison in AND with multiple values (failing)": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{
 								{"from": "baz"},
@@ -368,9 +368,9 @@ func TestParseRuleSet(t *testing.T) {
 			matchExpected: false,
 		},
 		{
-			filters: config.FilterSet{
-				"weirdest bug so far": config.Filter{
-					RuleSet: config.RuleSet{
+			filters: map[string]filter.Filter{
+				"weirdest bug so far": {
+					RuleSet: filter.RuleSet{
 						{
 							"and": []map[string]interface{}{
 								{"X-Custom-Mail-Id": "16"},
@@ -385,10 +385,10 @@ func TestParseRuleSet(t *testing.T) {
 
 		//{
 		//	headers: MailHeaders{"from": "oO"},
-		//	rule: config.Rule{
+		//	rule: filter.Rule{
 		//		"or": []map[string]interface{}{
 		//			{
-		//				"or": config.Rule{
+		//				"or": filter.Rule{
 		//					"or": []map[string]interface{}{
 		//						{"from": "nope"},
 		//						{"from": "oO"},
@@ -401,12 +401,13 @@ func TestParseRuleSet(t *testing.T) {
 		//},
 	}
 
-	testMailHeaders := imap.MessageHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": "", "custom-Header": "Foobar"}
+	testMailHeaders := server.MessageHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": "", "custom-Header": "Foobar"}
 
 	cfg, err := config.NewConfigFromFile("../../test/data/configs/valid/test/TestParserRuleSet.yaml")
 	require.Nil(err)
 
 	acc := cfg.Accounts["test"]
+	filters := cfg.Filters["test"]
 	require.NotNil(acc)
 
 	for i, test := range ruleParserTests {
@@ -429,9 +430,10 @@ func TestParseRuleSet(t *testing.T) {
 
 			// Test with same synthetic ruleSet test data from YAML
 			yml, err := yaml.Marshal(test.filters)
-			require.Contains(acc.FilterSet.Names(), filterName, "Add test %q to TestParserRuleSet.yml:\n=========\n%v=========\n%v", filterName, string(yml), err)
+			_, fieldInMap := filters[filterName]
+			require.True(fieldInMap, "Add test %q to TestParserRuleSet.yml:\n=========\n%v=========\n%v", filterName, string(yml), err)
 
-			ymlFilter := acc.FilterSet[filterName]
+			ymlFilter := filters[filterName]
 			require.NotNil(ymlFilter)
 			require.NotNil(ymlFilter.RuleSet)
 

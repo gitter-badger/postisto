@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/filter"
-	"github.com/arnisoph/postisto/pkg/imap"
 	"github.com/arnisoph/postisto/pkg/log"
+	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/arnisoph/postisto/test/integration"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -19,20 +19,17 @@ func TestGetUnsortedMails(t *testing.T) {
 	acc := integration.NewStandardAccount(t)
 	const numTestmails = 2
 
-	var err error
-	imapClient, err := imap.NewClient(acc.Connection)
-	require.Nil(err)
-
+	require.NoError(acc.Connection.Connect())
 	defer func() {
-		require.Nil(imapClient.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(imapClient.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
+		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), "INBOX", []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
-	testMessages, err := filter.GetUnsortedMsgs(imapClient, *acc.InputMailbox)
+	testMessages, err := filter.GetUnsortedMsgs(&acc.Connection, acc.InputMailbox.Mailbox, acc.InputMailbox.WithoutFlags)
 	require.Nil(err)
 	require.Equal(2, len(testMessages))
 }
@@ -118,14 +115,15 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		// Get config
 		cfg, err := config.NewConfigFromFile(fmt.Sprintf("../../test/data/configs/valid/local_imap_server/TestEvaluateFilterSetsOnMails-%v/", testNum+1))
 		require.Nil(err)
+
 		acc := cfg.Accounts["local_imap_server"]
+		filters := cfg.Filters["local_imap_server"]
 
-		if acc.Connection.Server == "" {
-			// Create new random user
-			acc.Connection = integration.NewStandardAccount(t).Connection
-		}
+		// Create new random user
+		acc.Connection.Username = integration.NewStandardAccount(t).Connection.Username
+		acc.Connection.Password = "test"
 
-		if strings.Contains(acc.Connection.Server, "gmail") {
+		if strings.Contains(acc.Connection.Server, "gmail") { //TODO tidy up
 			acc.Connection.Username = os.Getenv("POSTISTO_GMAIL_TEST_ACC_USERNAME")
 			acc.Connection.Password = os.Getenv("POSTISTO_GMAIL_TEST_ACC_PASSWORD")
 		}
@@ -133,57 +131,56 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		// Set debug info for failed assertions
 		debugInfo := map[string]string{"username": acc.Connection.Username, "testNum": fmt.Sprint(testNum + 1)}
 
-		// NewClient to IMAP server
-		imapClient, err := imap.NewClient(acc.Connection)
-		require.Nil(err)
+		// Connect to IMAP server
+		require.NoError(acc.Connection.Connect(), debugInfo)
 
 		if strings.Contains(acc.Connection.Server, "gmail") {
 			log.Debug("Detected gmail account. Going to cleanup...")
-			uids, err := imapClient.Search("INBOX", nil, nil)
+			uids, err := acc.Connection.Search("INBOX", nil, nil)
 			require.NoError(err)
 			if len(uids) > 0 {
-				err = imapClient.DeleteMsgs("INBOX", uids, true)
+				err = acc.Connection.DeleteMsgs("INBOX", uids, true)
 				require.NoError(err)
 			}
 
-			mailBoxes, err := imapClient.List()
+			mailBoxes, err := acc.Connection.List()
 			require.NoError(err)
 			for mailboxName, _ := range mailBoxes {
 				if strings.Contains(strings.ToLower(mailboxName), "x-postisto") {
-					require.NoError(imapClient.DeleteMailbox(mailboxName))
+					require.NoError(acc.Connection.DeleteMailbox(mailboxName))
 				}
 			}
 		}
 
 		// Simulate new unsorted mails by uploading
 		for i, mailNum := range test.mailsToUpload {
-			require.NotNil(imapClient)
-			require.NotNil(acc)
-			require.NotNil(acc.InputMailbox)
-			require.Nil(imapClient.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, nil), debugInfo)
+			require.NotNil(acc, debugInfo)
+			require.NotNil(acc.Connection, debugInfo)
+			require.NotNil(acc.InputMailbox, debugInfo)
+			require.NotEmpty(filters, debugInfo)
+			require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, nil), debugInfo)
 
 			var withoutFlags []string
 			if !strings.Contains(acc.Connection.Server, "gmail") { // gmail does some extra magic, marking (some) new messages as "important"....
-				withoutFlags = append(withoutFlags, imap.FlaggedFlag)
+				withoutFlags = append(withoutFlags, server.FlaggedFlag)
 			}
 
 			// verify upload
-			uploadedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, withoutFlags)
+			uploadedMails, err := acc.Connection.Search(acc.InputMailbox.Mailbox, nil, withoutFlags)
 
 			require.NoError(err)
 			require.Len(uploadedMails, i+1, fmt.Sprintf("This (#%v) or one of the previous mail uploads failed!", i+1), debugInfo)
 
 			if strings.Contains(acc.Connection.Server, "gmail") {
 				//gmail flaggs APPENDed msgs. I don't know yet why.. //TODO
-				require.NoError(imapClient.SetFlags(acc.InputMailbox.Mailbox, uploadedMails, "-FLAGS", []interface{}{imap.FlaggedFlag}, false))
+				require.NoError(acc.Connection.SetFlags(acc.InputMailbox.Mailbox, uploadedMails, "-FLAGS", []interface{}{server.FlaggedFlag}, false))
 			}
 		}
 
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
-		err = filter.EvaluateFilterSetsOnMsgs(imapClient, *acc)
-		require.Nil(err, debugInfo) //TODO replace to NoError
+		require.Nil(filter.EvaluateFilterSetsOnMsgs(&acc.Connection, acc.InputMailbox.Mailbox, acc.InputMailbox.WithoutFlags, *acc.FallbackMailbox, filters), debugInfo) //TODO replace to NoError
 
 		fallbackMethod := "moving"
 		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
@@ -192,12 +189,12 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 		// Verify Source
 		if fallbackMethod == "flagging" {
-			fetchedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, []string{imap.FlaggedFlag})
+			fetchedMails, err := acc.Connection.Search(acc.InputMailbox.Mailbox, nil, []string{server.FlaggedFlag})
 			require.Nil(err, debugInfo)
 			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
 		} else {
 			// fallback = moving
-			fetchedMails, err := imapClient.Search(acc.InputMailbox.Mailbox, nil, nil)
+			fetchedMails, err := acc.Connection.Search(acc.InputMailbox.Mailbox, nil, nil)
 			require.Nil(err, debugInfo)
 			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
 		}
@@ -205,19 +202,19 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		// Verify Targets
 		for _, target := range test.targets {
 			// fallback = flagging
-			fetchedMails, err := imapClient.Search(target.name, nil, nil)
+			fetchedMails, err := acc.Connection.Search(target.name, nil, nil)
 			require.Nil(err, debugInfo)
 			require.Equal(target.num, len(fetchedMails), "Unexpected num of mails in target %v", target.name, debugInfo)
 		}
 
 		// Verify fallback mailbox (if != source)
 		if acc.InputMailbox.Mailbox != *acc.FallbackMailbox {
-			fallBackMsgs, err := imapClient.Search(*acc.FallbackMailbox, nil, nil)
+			fallBackMsgs, err := acc.Connection.Search(*acc.FallbackMailbox, nil, nil)
 			require.Nil(err, debugInfo)
 			require.Equal(test.fallbackMsgNum, len(fallBackMsgs), debugInfo)
 		}
 
 		// Disconnect - Hoooraaay!
-		require.Nil(imapClient.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/log"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v3"
@@ -12,13 +13,12 @@ import (
 )
 
 func NewConfig() *Config {
-	return &Config{}
+	return new(Config)
 }
 
-func NewConfigWithDefaults() *Config {
+func NewConfigWithDefaults() (*Config, error) {
 	cfg := NewConfig()
-	cfg.setDefaults()
-	return cfg
+	return cfg.validate()
 }
 
 func NewConfigFromFile(configPath string) (*Config, error) {
@@ -58,7 +58,7 @@ func NewConfigFromFile(configPath string) (*Config, error) {
 	}
 
 	for _, file := range configFiles {
-		fileCfg := Config{}
+		fileCfg := new(Config)
 		yamlFile, err := ioutil.ReadFile(file)
 
 		if err != nil {
@@ -79,68 +79,66 @@ func NewConfigFromFile(configPath string) (*Config, error) {
 		}
 	}
 
-	cfg.setDefaults()
-	if err = cfg.validate(); err != nil {
-		log.Errorw("Failed to validate YAML", err, "yaml", cfg)
-		return nil, err
-	}
-
-	return cfg, nil
+	return cfg.validate()
 }
 
-func (cfg *Config) validate() error {
-
-	// Accounts
-
-	// Filters
-
-	// Settings
-	if cfg.Settings.LogConfig.PreSetMode != "" && cfg.Settings.LogConfig.ZapConfig != nil {
-		return fmt.Errorf("log config validation error: either set mode or config")
+func (cfg Config) validate() (*Config, error) {
+	valCfg := Config{
+		Accounts: map[string]Account{},
+		Filters:  map[string]map[string]filter.Filter{},
 	}
 
-	return nil
-}
-
-func (cfg *Config) setDefaults() {
 	// Accounts
-	for _, acc := range cfg.Accounts {
-		if acc == nil {
-			acc = new(Account)
+	if len(cfg.Accounts) == 0 {
+		log.Info("Warning: no accounts configured")
+		//return nil, fmt.Errorf("no account configured")
+	}
+
+	for accName, acc := range cfg.Accounts {
+		newAcc := Account{
+			Connection: acc.Connection,
+			InputMailbox: acc.InputMailbox,
+			FallbackMailbox: acc.FallbackMailbox,
+		}
+		// Connection
+		if acc.Connection.Server == "" {
+			return nil, fmt.Errorf("server not configured")
 		}
 
-		// When not using IMAPS, enable STARTTLS by default
-		if !acc.Connection.IMAPS && acc.Connection.Starttls == nil {
-			var b bool
-			acc.Connection.Starttls = &b
-			*acc.Connection.Starttls = true
+		// Input
+		if newAcc.InputMailbox == nil || newAcc.InputMailbox.Mailbox == "" {
+			newAcc.InputMailbox = new(InputMailboxConfig)
+			newAcc.InputMailbox.Mailbox = "INBOX"
+			newAcc.InputMailbox.WithoutFlags = []string{"\\Seen", "\\Flagged"}
 		}
 
-		if acc.Connection.TLSVerify == nil {
-			var b bool
-			acc.Connection.TLSVerify = &b
-			*acc.Connection.TLSVerify = true
+		if newAcc.FallbackMailbox == nil {
+			newAcc.InputMailbox.WithoutFlags = []string{"\\Seen", "\\Flagged"}
+
+			newAcc.FallbackMailbox = new(string)
+			*newAcc.FallbackMailbox = "INBOX"
 		}
 
-		if acc.InputMailbox == nil || acc.InputMailbox.Mailbox == "" {
-			acc.InputMailbox = &InputMailbox{Mailbox: "INBOX", WithoutFlags: []string{"\\Seen", "\\Flagged"}}
+		if *newAcc.FallbackMailbox != newAcc.InputMailbox.Mailbox {
+			newAcc.InputMailbox.WithoutFlags = []string{}
 		}
 
-		if acc.FallbackMailbox == nil {
-			fallback := "INBOX"
-			acc.FallbackMailbox = &fallback
-		}
-
-		if acc.InputMailbox.Mailbox == *acc.FallbackMailbox && len(acc.InputMailbox.WithoutFlags) == 0 {
-			acc.InputMailbox.WithoutFlags = []string{"\\Seen", "\\Flagged"}
-		}
+		valCfg.Accounts[accName] = newAcc
+		//fmt.Printf("<%q %#v\n", accName, acc.InputMailbox)
 	}
 
 	// Filters
+	valCfg.Filters = cfg.Filters
 
 	// Settings
-	// && len(cfg.Settings.LogConfig.ZapConfig.OutputPaths) == 0
+	valCfg.Settings = cfg.Settings
 	if cfg.Settings.LogConfig.PreSetMode == "" && cfg.Settings.LogConfig.ZapConfig == nil {
-		cfg.Settings.LogConfig.PreSetMode = "prod"
+		valCfg.Settings.LogConfig.PreSetMode = "prod"
 	}
+
+	if cfg.Settings.LogConfig.PreSetMode != "" && cfg.Settings.LogConfig.ZapConfig != nil {
+		return nil, fmt.Errorf("log config validation error: either set mode or config")
+	}
+
+	return &valCfg, nil
 }

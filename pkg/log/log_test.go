@@ -26,7 +26,7 @@ func TestInitWithConfig(t *testing.T) {
 
 	fmt.Println("Log with full user-defined log config (zap.Config)")
 	cfg, err := config.NewConfigFromFile("../../test/data/configs/valid/test/CustomLogConfig.yaml")
-	require.Nil(err)
+	require.NoError(err)
 	require.NotNil(cfg)
 
 	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
@@ -36,14 +36,16 @@ func TestInitWithConfig(t *testing.T) {
 	testLogging()
 
 	fmt.Println("Log with preset mode dev")
-	cfg = config.NewConfigWithDefaults()
+	cfg, err = config.NewConfigWithDefaults()
+	require.NoError(err)
 	require.NotNil(cfg)
 	cfg.Settings.LogConfig.PreSetMode = "dev"
 	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
 	testLogging()
 
 	fmt.Println("Log with user default (preset mode prod)")
-	cfg = config.NewConfigWithDefaults()
+	cfg, err = config.NewConfigWithDefaults()
+	require.NoError(err)
 	require.NotNil(cfg)
 	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
 	testLogging()

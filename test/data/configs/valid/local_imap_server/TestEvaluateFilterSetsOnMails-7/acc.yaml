@@ -1,9 +1,8 @@
 accounts:
   local_imap_server:
+    enable: true
     connection:
-      enabled: true
       server: localhost
       port: 10143
       cacertfile: ../../test/data/certs/ca.pem
-    input:
-      mailbox: PreInbox
+    input: PreInbox

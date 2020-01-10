@@ -26,8 +26,10 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 		cacertfile = &defaultcacert
 	}
 
+	inputMailbox := "INBOX"
+	fallbackMailbox := "INBOX"
 	acc := config.Account{
-		Enabled: true,
+		Enable: true,
 		Connection: server.Connection{
 			Server:   "localhost",
 			Port:     port,
@@ -39,10 +41,8 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
 		},
-		InputMailbox: &config.InputMailboxConfig{
-			Mailbox:      "INBOX",
-			WithoutFlags: []string{"\\Seen", "\\Flagged"},
-		},
+		InputMailbox:    &inputMailbox,
+		FallbackMailbox: &fallbackMailbox,
 	}
 
 	redisClient, err := newRedisClient()

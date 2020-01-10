@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/log"
 	imapClientPkg "github.com/emersion/go-imap/client"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 )
@@ -27,6 +28,11 @@ func (conn *Connection) Connect() error {
 	var imapClient *imapClientPkg.Client
 	var err error
 
+	// validate config
+	if err := conn.validate(); err != nil {
+		return err
+	}
+
 	// When not using IMAPS, enable STARTTLS by default
 	if !conn.IMAPS && conn.Starttls == nil {
 		var b bool
@@ -46,12 +52,6 @@ func (conn *Connection) Connect() error {
 
 	} else {
 		certPool = nil
-	}
-
-	if conn.TLSVerify == nil {
-		var b bool
-		conn.TLSVerify = &b
-		*conn.TLSVerify = true
 	}
 
 	tlsConfig := &tls.Config{
@@ -100,4 +100,26 @@ func (conn *Connection) Disconnect() error {
 		return nil
 	}
 	return conn.imapClient.Logout()
+}
+
+func (conn *Connection) validate() error {
+	if conn.Server == "" {
+		return errors.Errorf("server not set in account config")
+	}
+
+	if conn.Port == 0 {
+		return errors.Errorf("port is not set in account config")
+	}
+
+	if conn.Username == "" {
+		return errors.Errorf("username not set in account config")
+	}
+
+	if conn.TLSVerify == nil {
+		var b bool
+		conn.TLSVerify = &b
+		*conn.TLSVerify = true
+	}
+
+	return nil
 }

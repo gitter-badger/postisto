@@ -19,15 +19,10 @@ type Config struct {
 }
 
 type Account struct {
-	Enabled         bool                `yaml:"enabled"`
-	Connection      server.Connection   `yaml:"connection"`
-	InputMailbox    *InputMailboxConfig `yaml:"input"`
-	FallbackMailbox *string             `yaml:"fallback_mailbox"`
-}
-
-type InputMailboxConfig struct {
-	Mailbox      string   `yaml:"mailbox"`
-	WithoutFlags []string `yaml:"without_flags,flow"`
+	Enable          bool              `yaml:"enable"`
+	Connection      server.Connection `yaml:"connection"`
+	InputMailbox    *string           `yaml:"input"`
+	FallbackMailbox *string           `yaml:"fallback"`
 }
 
 func NewConfig() *Config {
@@ -112,6 +107,10 @@ func (cfg Config) validate() (*Config, error) {
 	}
 
 	for accName, acc := range cfg.Accounts {
+		if !acc.Enable {
+			continue
+		}
+
 		newAcc := Account{
 			Connection:      acc.Connection,
 			InputMailbox:    acc.InputMailbox,
@@ -123,21 +122,14 @@ func (cfg Config) validate() (*Config, error) {
 		}
 
 		// Input
-		if newAcc.InputMailbox == nil || newAcc.InputMailbox.Mailbox == "" {
-			newAcc.InputMailbox = new(InputMailboxConfig)
-			newAcc.InputMailbox.Mailbox = "INBOX"
-			newAcc.InputMailbox.WithoutFlags = []string{"\\Seen", "\\Flagged"}
+		if newAcc.InputMailbox == nil || *newAcc.InputMailbox == "" {
+			newAcc.InputMailbox = new(string)
+			*newAcc.InputMailbox = "INBOX"
 		}
 
 		if newAcc.FallbackMailbox == nil {
-			newAcc.InputMailbox.WithoutFlags = []string{"\\Seen", "\\Flagged"}
-
 			newAcc.FallbackMailbox = new(string)
 			*newAcc.FallbackMailbox = "INBOX"
-		}
-
-		if *newAcc.FallbackMailbox != newAcc.InputMailbox.Mailbox {
-			newAcc.InputMailbox.WithoutFlags = []string{}
 		}
 
 		valCfg.Accounts[accName] = newAcc

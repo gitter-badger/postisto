@@ -26,7 +26,6 @@ func TestNewConfigFromFile(t *testing.T) {
 	require.DirExists("../../test/data/configs/valid/")
 	cfg, err = config.NewConfigFromFile("../../test/data/configs/valid/")
 	require.Nil(err)
-	//fmt.Println(yaml.FormatError(err, true, true))
 	require.Equal("imap.server.de", cfg.Accounts["test"].Connection.Server)
 
 	// Failed file/dir loading
@@ -43,19 +42,3 @@ func TestNewConfigFromFile(t *testing.T) {
 	cfg, err = config.NewConfigFromFile("../../test/data/configs/invalid-unreadable-file/")
 	require.EqualError(err, "open ../../test/data/configs/invalid-unreadable-file/unreadable-file.testfile.yaml: permission denied")
 }
-
-//func TestFilterSet_Names(t *testing.T) {
-//	require := require.New(t)
-//
-//	cfg := config.NewConfig()
-//	var err error
-//
-//	// ACTUAL TESTS BELOW
-//
-//	// load test data
-//	cfg, err = config.NewConfigFromFile("../../test/data/configs/valid/local_imap_server/TestFilterSet_Names")
-//	require.Nil(err)
-//
-//	// test our funcy func
-//	require.ElementsMatch(cfg.Filters["local_imap_server"].Names(), []string{"shops"})
-//}

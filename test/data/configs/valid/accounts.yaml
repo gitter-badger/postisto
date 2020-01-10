@@ -2,8 +2,8 @@
 
 accounts:
   test:
+    enable: true
     connection:
-      enabled: false
       server: imap.server.de
       username: imap@account.de
       password: secure_password
@@ -13,8 +13,8 @@ accounts:
         ...
         -----END PGP MESSAGE-----
   gmail:
+    enable: false
     connection:
-      enabled: false
       server: imap.gmail.com
       port: 993
       imaps: true

@@ -1,6 +1,6 @@
 accounts:
   gmail:
-    enabled: false
+    enable: true
     connection:
       server: imap.gmail.com
       port: 993

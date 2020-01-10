@@ -1,74 +1,100 @@
 package main
 
 import (
+	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/log"
+	"github.com/emersion/go-imap"
+	"github.com/urfave/cli/v2"
+	goLog "log"
+	"os"
 	"time"
 )
 
 func main() {
+	var configPath string
+	var logLevel string
+	var logJSON bool
 
-	configPath := "/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/configs/examples/basic/"
-	cfg, err := config.NewConfigFromFile(configPath)
+	app := &cli.App{
+		Name:  "poŝtisto",
+		Usage: "foo ce",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "config",
+				Aliases:     []string{"c"},
+				Usage:       "config file or directory path",
+				Value:       "config/",
+				EnvVars:     []string{"CONFIG_PATH"},
+				Destination: &configPath,
+			},
+			&cli.StringFlag{
+				Name:        "log-level",
+				Aliases:     []string{"l"},
+				Usage:       "log level e.g. trace, debug, info or error (WARNING: trace exposes account credentials and mor sensitive data)",
+				Value:       "info",
+				EnvVars:     []string{"LOG_LEVEL"},
+				Destination: &logLevel,
+			},
+			&cli.BoolFlag{
+				Name:        "log-json",
+				Aliases:     []string{"j"},
+				Usage:       "format log output as JSON",
+				Value:       false,
+				EnvVars:     []string{"LOG_JSON"},
+				Destination: &logJSON,
+				HasBeenSet:  false,
+			},
+		},
+		Action: func(c *cli.Context) error {
+			return startApp(c, configPath, logLevel, logJSON)
+		},
+	}
+
+	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatalw("Failed to load configuration", err, "path", configPath)
+		goLog.Fatalln("Failed to start app:", err)
+	}
+}
+
+func startApp(c *cli.Context, configPath string, logLevel string, logJSON bool) error {
+
+	if err := log.InitWithConfig(logLevel, logJSON); err != nil {
+		return err
 	}
 
-	if err := log.InitWithConfig(cfg.Settings.LogConfig); err != nil {
-		log.Fatalw("Failed to set up logging", err)
+	var cfg *config.Config
+	var err error
+
+	if cfg, err = config.NewConfigFromFile(configPath); err != nil {
+		return err
 	}
 
-	acc := cfg.Accounts["gmail"]
-	filters := cfg.Filters["gmail"]
-
-	if err := acc.Connection.Connect(); err != nil {
-		log.Fatalw("Failed to login to IMAP server", err)
+	if len(cfg.Accounts) == 0 {
+		return fmt.Errorf("no (enabled) account configuration found. nothing to do")
 	}
 
-	log.Infow("=>", "inbox", acc.InputMailbox, "fallback", acc.FallbackMailbox)
+	if len(cfg.Filters) == 0 {
+		return fmt.Errorf("no filter configuration found. nothing to do")
+	}
 
 	for {
+		for name, acc := range cfg.Accounts {
+			filters, ok := cfg.Filters[name]
+			if !ok {
+				return fmt.Errorf("no filter configuration found for account %v. nothing to do", name)
+			}
 
-		if err := filter.EvaluateFilterSetsOnMsgs(&acc.Connection, acc.InputMailbox.Mailbox, nil, *acc.FallbackMailbox, filters); err != nil {
-			log.Fatal("Failed to run filter engine", err)
+			if err := acc.Connection.Connect(); err != nil {
+				return err
+			}
+
+			if err := filter.EvaluateFilterSetsOnMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag}, *acc.FallbackMailbox, filters); err != nil {
+				return fmt.Errorf("failed to run filter engine: %v", err)
+			}
 		}
 
 		time.Sleep(time.Second * 10)
 	}
-
-	//// NewConfigFromFile user config
-	//var err error
-	//cfg := config.New()
-	//if cfg, err = cfg.NewConfigFromFile("/Users/ab/Documents/dev/GOPATH/src/github.com/arnisoph/postisto/test/data/configs/valid/"); err != nil {
-	//	log.Panicf("failed to load config: %v", err)
-	//}
-	//
-	//// Connect to IMAP servers
-	//accs := map[string]*config.Account{}
-	//for accName, acc := range cfg.Accounts {
-	//	if !acc.Connection.Enabled {
-	//		continue
-	//	}
-	//	if err := conn.Connect(acc); err != nil {
-	//		log.Fatalf("failed to connect (%v): %v", accName, err)
-	//
-	//	} else {
-	//		accs[accName] = acc
-	//	}
-	//}
-	//
-	//defer func() {
-	//	for _, acc := range accs {
-	//		if err := conn.Disconnect(acc); err != nil {
-	//			log.Fatalf("failed to discoonect account %v", err)
-	//		}
-	//	}
-	//}()
-	//
-	//for _, acc := range accs {
-	//	log.Println(acc.Connection.Connection.State(), imap.AuthenticatedState)
-	//}
-	//
-	//log.Println("Done!")
 }

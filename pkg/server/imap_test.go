@@ -121,13 +121,13 @@ func TestMoveMails(t *testing.T) {
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
+		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), *acc.InputMailbox, []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := acc.Connection.SearchAndFetch(acc.InputMailbox.Mailbox, nil, nil)
+	fetchedMails, err := acc.Connection.SearchAndFetch(*acc.InputMailbox, nil, nil)
 	require.Equal(numTestmails, len(fetchedMails))
 	require.Nil(err)
 
@@ -166,13 +166,13 @@ func TestDeleteMails(t *testing.T) {
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
+		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), *acc.InputMailbox, []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := acc.Connection.SearchAndFetch(acc.InputMailbox.Mailbox, nil, nil)
+	fetchedMails, err := acc.Connection.SearchAndFetch(*acc.InputMailbox, nil, nil)
 	require.Equal(numTestmails, len(fetchedMails))
 	require.Nil(err)
 
@@ -207,13 +207,13 @@ func TestParseMailHeaders(t *testing.T) {
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
-		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), acc.InputMailbox.Mailbox, []string{}))
+		require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", i), *acc.InputMailbox, []string{}))
 	}
 
 	// ACTUAL TESTS BELOW
 
 	// Load newly uploaded mails
-	fetchedMails, err := acc.Connection.SearchAndFetch(acc.InputMailbox.Mailbox, nil, nil)
+	fetchedMails, err := acc.Connection.SearchAndFetch(*acc.InputMailbox, nil, nil)
 	require.Nil(err)
 	require.Equal(numTestmails, len(fetchedMails))
 

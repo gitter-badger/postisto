@@ -2,8 +2,8 @@
 
 accounts:
   local_imap_server:
+    enable: true
     connection:
-      enabled: true
       server: localhost
       port: 10143
       imaps: false
@@ -11,8 +11,8 @@ accounts:
       username: test-42@example.com
       password: test
   local_imap_server2:
+    enable: false
     connection:
-      enabled: false
       server: localhost
       port: 10143
       imaps: false

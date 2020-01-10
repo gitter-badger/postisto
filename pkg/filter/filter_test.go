@@ -7,6 +7,7 @@ import (
 	"github.com/arnisoph/postisto/pkg/log"
 	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/arnisoph/postisto/test/integration"
+	"github.com/emersion/go-imap"
 	"github.com/stretchr/testify/require"
 	"os"
 	"strings"
@@ -29,7 +30,7 @@ func TestGetUnsortedMails(t *testing.T) {
 	}
 
 	// ACTUAL TESTS BELOW
-	testMessages, err := filter.GetUnsortedMsgs(&acc.Connection, acc.InputMailbox.Mailbox, acc.InputMailbox.WithoutFlags)
+	testMessages, err := filter.GetUnsortedMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag})
 	require.Nil(err)
 	require.Equal(2, len(testMessages))
 }
@@ -156,9 +157,9 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		for i, mailNum := range test.mailsToUpload {
 			require.NotNil(acc, debugInfo)
 			require.NotNil(acc.Connection, debugInfo)
-			require.NotNil(acc.InputMailbox, debugInfo)
+			require.NotNil(*acc.InputMailbox, debugInfo)
 			require.NotEmpty(filters, debugInfo)
-			require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), acc.InputMailbox.Mailbox, nil), debugInfo)
+			require.Nil(acc.Connection.Upload(fmt.Sprintf("../../test/data/mails/log%v.txt", mailNum), *acc.InputMailbox, nil), debugInfo)
 
 			var withoutFlags []string
 			if !strings.Contains(acc.Connection.Server, "gmail") { // gmail does some extra magic, marking (some) new messages as "important"....
@@ -166,37 +167,37 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 			}
 
 			// verify upload
-			uploadedMails, err := acc.Connection.Search(acc.InputMailbox.Mailbox, nil, withoutFlags)
+			uploadedMails, err := acc.Connection.Search(*acc.InputMailbox, nil, withoutFlags)
 
 			require.NoError(err)
 			require.Len(uploadedMails, i+1, fmt.Sprintf("This (#%v) or one of the previous mail uploads failed!", i+1), debugInfo)
 
 			if strings.Contains(acc.Connection.Server, "gmail") {
 				//gmail flaggs APPENDed msgs. I don't know yet why.. //TODO
-				require.NoError(acc.Connection.SetFlags(acc.InputMailbox.Mailbox, uploadedMails, "-FLAGS", []interface{}{server.FlaggedFlag}, false))
+				require.NoError(acc.Connection.SetFlags(*acc.InputMailbox, uploadedMails, "-FLAGS", []interface{}{server.FlaggedFlag}, false))
 			}
 		}
 
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
-		require.Nil(filter.EvaluateFilterSetsOnMsgs(&acc.Connection, acc.InputMailbox.Mailbox, acc.InputMailbox.WithoutFlags, *acc.FallbackMailbox, filters), debugInfo) //TODO replace to NoError
+		require.Nil(filter.EvaluateFilterSetsOnMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag}, *acc.FallbackMailbox, filters), debugInfo) //TODO replace to NoError
 
 		fallbackMethod := "moving"
-		if *acc.FallbackMailbox == acc.InputMailbox.Mailbox || *acc.FallbackMailbox == "" {
+		if *acc.FallbackMailbox == *acc.InputMailbox || *acc.FallbackMailbox == "" {
 			fallbackMethod = "flagging"
 		}
 
 		// Verify Source
 		if fallbackMethod == "flagging" {
-			fetchedMails, err := acc.Connection.Search(acc.InputMailbox.Mailbox, nil, []string{server.FlaggedFlag})
+			fetchedMails, err := acc.Connection.Search(*acc.InputMailbox, nil, []string{server.FlaggedFlag})
 			require.Nil(err, debugInfo)
-			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
+			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", *acc.InputMailbox, debugInfo)
 		} else {
 			// fallback = moving
-			fetchedMails, err := acc.Connection.Search(acc.InputMailbox.Mailbox, nil, nil)
+			fetchedMails, err := acc.Connection.Search(*acc.InputMailbox, nil, nil)
 			require.Nil(err, debugInfo)
-			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", acc.InputMailbox.Mailbox, debugInfo)
+			require.Equal(0, len(fetchedMails), "Unexpected num of mails in source %v", *acc.InputMailbox, debugInfo)
 		}
 
 		// Verify Targets
@@ -208,7 +209,7 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		}
 
 		// Verify fallback mailbox (if != source)
-		if acc.InputMailbox.Mailbox != *acc.FallbackMailbox {
+		if *acc.InputMailbox != *acc.FallbackMailbox {
 			fallBackMsgs, err := acc.Connection.Search(*acc.FallbackMailbox, nil, nil)
 			require.Nil(err, debugInfo)
 			require.Equal(test.fallbackMsgNum, len(fallBackMsgs), debugInfo)

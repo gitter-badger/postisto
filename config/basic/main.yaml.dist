@@ -7,8 +7,6 @@ accounts:
       username: user@gmail.com
       password: <password>
       imaps: true
-    input:
-      mailbox: INBOX
 filters:
   gmail:
     shops:
@@ -23,3 +21,4 @@ filters:
       rules:
         - or:
           - subject: Your Holz order
+          - subject: was mit holz

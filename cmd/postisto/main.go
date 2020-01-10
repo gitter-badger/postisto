@@ -5,7 +5,7 @@ import (
 	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/log"
-	"github.com/emersion/go-imap"
+	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/urfave/cli/v2"
 	goLog "log"
 	"os"
@@ -16,10 +16,11 @@ func main() {
 	var configPath string
 	var logLevel string
 	var logJSON bool
+	var pollInterval time.Duration
 
 	app := &cli.App{
 		Name:  "poŝtisto",
-		Usage: "foo ce",
+		Usage: "quite okay mail-sorting tool",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "config",
@@ -44,11 +45,18 @@ func main() {
 				Value:       false,
 				EnvVars:     []string{"LOG_JSON"},
 				Destination: &logJSON,
-				HasBeenSet:  false,
+			},
+			&cli.DurationFlag{
+				Name:        "poll-interval",
+				Aliases:     []string{"i"},
+				Usage:       "duration to wait between checking for new messages in input mailbox",
+				Value:       5,
+				EnvVars:     []string{"POLL_INTERVAL"},
+				Destination: &pollInterval,
 			},
 		},
 		Action: func(c *cli.Context) error {
-			return startApp(c, configPath, logLevel, logJSON)
+			return startApp(c, configPath, logLevel, logJSON, pollInterval)
 		},
 	}
 
@@ -58,7 +66,7 @@ func main() {
 	}
 }
 
-func startApp(c *cli.Context, configPath string, logLevel string, logJSON bool) error {
+func startApp(c *cli.Context, configPath string, logLevel string, logJSON bool, pollInterval time.Duration) error {
 
 	if err := log.InitWithConfig(logLevel, logJSON); err != nil {
 		return err
@@ -79,22 +87,30 @@ func startApp(c *cli.Context, configPath string, logLevel string, logJSON bool) 
 		return fmt.Errorf("no filter configuration found. nothing to do")
 	}
 
+	type accTuple struct {
+		acc     *config.Account
+		filters *map[string]filter.Filter
+	}
+	var accs []accTuple
+	for name, acc := range cfg.Accounts {
+		filters, ok := cfg.Filters[name]
+		if !ok {
+			return fmt.Errorf("no filter configuration found for account %v. nothing to do", name)
+		}
+
+		accs = append(accs, accTuple{acc: &acc, filters: &filters})
+		if err := acc.Connection.Connect(); err != nil {
+			return err
+		}
+	}
+
 	for {
-		for name, acc := range cfg.Accounts {
-			filters, ok := cfg.Filters[name]
-			if !ok {
-				return fmt.Errorf("no filter configuration found for account %v. nothing to do", name)
-			}
-
-			if err := acc.Connection.Connect(); err != nil {
-				return err
-			}
-
-			if err := filter.EvaluateFilterSetsOnMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag}, *acc.FallbackMailbox, filters); err != nil {
+		for _, accTuple := range accs {
+			if err := filter.EvaluateFilterSetsOnMsgs(&accTuple.acc.Connection, *accTuple.acc.InputMailbox, []string{server.SeenFlag, server.FlaggedFlag}, *accTuple.acc.FallbackMailbox, *accTuple.filters); err != nil {
 				return fmt.Errorf("failed to run filter engine: %v", err)
 			}
 		}
 
-		time.Sleep(time.Second * 10)
+		time.Sleep(pollInterval)
 	}
 }

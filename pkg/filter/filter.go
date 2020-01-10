@@ -38,7 +38,9 @@ func EvaluateFilterSetsOnMsgs(srv *server.Connection, inputMailbox string, input
 	for _, msg := range msgs {
 		var matched bool
 
-		log.Infow("Starting to filter message", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId, "headers", msg.Headers)
+		log.Infow("Found new message in input mailbox to sort", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId)
+
+		log.Debugw("Starting to filter message", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId)
 		for filterName, filterConfig := range filterSet {
 			log.Debugw(fmt.Sprintf("Evaluate filter %q against message headers", filterName), "uid", msg.RawMessage.Uid, "ruleSet", filterConfig.RuleSet)
 			matched, err = ParseRuleSet(filterConfig.RuleSet, msg.Headers)

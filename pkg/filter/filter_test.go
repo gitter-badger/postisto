@@ -31,7 +31,7 @@ func TestGetUnsortedMails(t *testing.T) {
 
 	// ACTUAL TESTS BELOW
 	testMessages, err := filter.GetUnsortedMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag})
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal(2, len(testMessages))
 }
 
@@ -115,7 +115,7 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 
 		// Get config
 		cfg, err := config.NewConfigFromFile(fmt.Sprintf("../../test/data/configs/valid/local_imap_server/TestEvaluateFilterSetsOnMails-%v/", testNum+1))
-		require.Nil(err)
+		require.NoError(err)
 
 		acc := cfg.Accounts["local_imap_server"]
 		filters := cfg.Filters["local_imap_server"]
@@ -181,7 +181,7 @@ func TestEvaluateFilterSetsOnMails(t *testing.T) {
 		// ACTUAL TESTS BELOW
 
 		// Baaaam
-		require.Nil(filter.EvaluateFilterSetsOnMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag}, *acc.FallbackMailbox, filters), debugInfo) //TODO replace to NoError
+		require.NoError(filter.EvaluateFilterSetsOnMsgs(&acc.Connection, *acc.InputMailbox, []string{imap.SeenFlag, imap.FlaggedFlag}, *acc.FallbackMailbox, filters), debugInfo)
 
 		fallbackMethod := "moving"
 		if *acc.FallbackMailbox == *acc.InputMailbox || *acc.FallbackMailbox == "" {

@@ -404,7 +404,7 @@ func TestParseRuleSet(t *testing.T) {
 	testMailHeaders := server.MessageHeaders{"from": "foo@example.com", "to": "me@EXAMPLE.com", "subject": "With Löve", "empty-header": "", "custom-Header": "Foobar"}
 
 	cfg, err := config.NewConfigFromFile("../../test/data/configs/valid/test/TestParserRuleSet.yaml")
-	require.Nil(err)
+	require.NoError(err)
 
 	acc := cfg.Accounts["test"]
 	filters := cfg.Filters["test"]
@@ -415,7 +415,7 @@ func TestParseRuleSet(t *testing.T) {
 			// Test with native synthetic test data
 			matched, err := filter.ParseRuleSet(testFilter.RuleSet, testMailHeaders)
 			if test.err == "" {
-				require.Nil(err)
+				require.NoError(err)
 			}
 			if test.err != "" && err != nil {
 				require.True(strings.HasPrefix(err.Error(), test.err), "NATIVE DATA TEST: Actual error message: %v", err.Error())
@@ -439,7 +439,7 @@ func TestParseRuleSet(t *testing.T) {
 
 			matched, err = filter.ParseRuleSet(ymlFilter.RuleSet, testMailHeaders)
 			if test.err == "" {
-				require.Nil(err)
+				require.NoError(err)
 			}
 			if test.err != "" && err != nil {
 				require.True(strings.HasPrefix(err.Error(), test.err), "YML DATA TEST: Actual error message: %v", err.Error())

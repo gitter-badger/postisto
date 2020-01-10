@@ -45,7 +45,7 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	// Test searching only
 	uids, err := acc.Connection.Search("INBOX", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal([]uint32{1, 2, 3}, uids)
 
 	// Search in non-existing mailbox
@@ -56,7 +56,7 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	// Search in correct Mailbox now
 	fetchedMails, err = acc.Connection.SearchAndFetch("INBOX", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal(numTestmails, len(fetchedMails))
 }
 
@@ -79,7 +79,7 @@ func TestSetMailFlags(t *testing.T) {
 
 	// Load newly uploaded mails
 	fetchedMails, err := acc.Connection.SearchAndFetch("INBOX", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal(numTestmails, len(fetchedMails))
 
 	// Test failed GetFlags (because of non-existing mailbox)
@@ -93,19 +93,19 @@ func TestSetMailFlags(t *testing.T) {
 	// Add flags
 	require.Nil(acc.Connection.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "+FLAGS", []interface{}{"fooooooo", "asdasd", "$MailFlagBit0", server.FlaggedFlag}, false))
 	flags, err = acc.Connection.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]string{"fooooooo", "asdasd", "$mailflagbit0", server.FlaggedFlag}, flags)
 
 	// Remove flags
 	require.Nil(acc.Connection.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "-FLAGS", []interface{}{"fooooooo", "asdasd"}, false))
 	flags, err = acc.Connection.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]string{"$mailflagbit0", server.FlaggedFlag}, flags)
 
 	// Replace all flags with new list
 	require.Nil(acc.Connection.SetFlags("INBOX", []uint32{fetchedMails[0].RawMessage.Uid}, "FLAGS", []interface{}{"123", "forty-two"}, false))
 	flags, err = acc.Connection.GetFlags("INBOX", fetchedMails[0].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]string{"123", "forty-two"}, flags)
 }
 
@@ -129,28 +129,28 @@ func TestMoveMails(t *testing.T) {
 	// Load newly uploaded mails
 	fetchedMails, err := acc.Connection.SearchAndFetch(*acc.InputMailbox, nil, nil)
 	require.Equal(numTestmails, len(fetchedMails))
-	require.Nil(err)
+	require.NoError(err)
 
 	// Move mails arround
 	err = acc.Connection.Move([]uint32{fetchedMails[0].RawMessage.Uid}, "INBOX", "MyTarget42")
-	require.Nil(err)
+	require.NoError(err)
 
 	err = acc.Connection.Move([]uint32{fetchedMails[1].RawMessage.Uid}, "INBOX", "INBOX")
-	require.Nil(err)
+	require.NoError(err)
 
 	err = acc.Connection.Move([]uint32{fetchedMails[2].RawMessage.Uid}, "INBOX", "MyTarget!!!")
-	require.Nil(err)
+	require.NoError(err)
 
 	err = acc.Connection.Move([]uint32{fetchedMails[3].RawMessage.Uid}, "wrong-source", "MyTarget!!!")
 	require.Error(err)
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: wrong-source"))
 
 	err = acc.Connection.Move([]uint32{fetchedMails[4].RawMessage.Uid}, "INBOX", "ütf-8 & 梦龙周")
-	require.Nil(err)
+	require.NoError(err)
 
 	var uids []uint32
 	uids, err = acc.Connection.Search("INBOX", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.EqualValues([]uint32{4, 6}, uids) // UID 1 moved, UID 2 became 6, UID 3 moved, UID 4 kept untouched, UID 5 moved
 }
 
@@ -174,7 +174,7 @@ func TestDeleteMails(t *testing.T) {
 	// Load newly uploaded mails
 	fetchedMails, err := acc.Connection.SearchAndFetch(*acc.InputMailbox, nil, nil)
 	require.Equal(numTestmails, len(fetchedMails))
-	require.Nil(err)
+	require.NoError(err)
 
 	// Delete one mail
 	err = acc.Connection.DeleteMsgs("does-not-exist", []uint32{fetchedMails[0].RawMessage.Uid}, true) // mailbox doesn't exist, can't be deleted
@@ -182,16 +182,16 @@ func TestDeleteMails(t *testing.T) {
 	require.True(strings.HasPrefix(err.Error(), "Mailbox doesn't exist: does-not-exist"))
 
 	err = acc.Connection.DeleteMsgs("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, false) // not moved yet, flag, don't expunge yet
-	require.Nil(err)
+	require.NoError(err)
 	flags, err := acc.Connection.GetFlags("INBOX", fetchedMails[1].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.EqualValues([]string{server.DeletedFlag}, flags)
 	err = acc.Connection.DeleteMsgs("INBOX", []uint32{fetchedMails[1].RawMessage.Uid}, true) // not moved yet, flag & expunge
-	require.Nil(err)
+	require.NoError(err)
 
 	var uids []uint32
 	uids, err = acc.Connection.Search("INBOX", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.EqualValues([]uint32{1, 3}, uids) // UID 1 kept untouched, UID 2 deleted, UID 3 kept untouched
 }
 
@@ -214,7 +214,7 @@ func TestParseMailHeaders(t *testing.T) {
 
 	// Load newly uploaded mails
 	fetchedMails, err := acc.Connection.SearchAndFetch(*acc.InputMailbox, nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal(numTestmails, len(fetchedMails))
 
 	// Verify parsed fields (header)

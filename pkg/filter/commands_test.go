@@ -29,7 +29,7 @@ func TestApplyCommands(t *testing.T) {
 	// Load newly uploaded mails
 	testMails, err := acc.Connection.SearchAndFetch("INBOX", nil, nil)
 	require.Equal(numTestmails, len(testMails))
-	require.Nil(err)
+	require.NoError(err)
 
 	// Apply commands
 	cmds := make(filter.FilterOps)
@@ -40,14 +40,14 @@ func TestApplyCommands(t *testing.T) {
 	// Message 1
 	require.Nil(filter.RunCommands(&acc.Connection, "INBOX", testMails[0].RawMessage.Uid, cmds))
 	flags, err := acc.Connection.GetFlags("MyTarget", testMails[0].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]string{"add_foobar", "$mailflagbit0", server.FlaggedFlag}, flags)
 
 	// Message 2: replace all flags
 	cmds["replace_all_flags"] = []interface{}{"42", "bar", "oO", "$MailFlagBit0", server.FlaggedFlag}
 	require.Nil(filter.RunCommands(&acc.Connection, "INBOX", testMails[1].RawMessage.Uid, cmds))
 	flags, err = acc.Connection.GetFlags("MyTarget", testMails[1].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]string{"42", "bar", "oo", "$mailflagbit0", server.FlaggedFlag}, flags)
 
 	// Upload fresh mail
@@ -56,22 +56,22 @@ func TestApplyCommands(t *testing.T) {
 	// Load newly uploaded mail
 	testMails, err = acc.Connection.SearchAndFetch("INBOX", nil, nil)
 	require.Equal(1, len(testMails))
-	require.Nil(err)
+	require.NoError(err)
 
 	// Apply cmd to this new mail 3 too
 	cmds["replace_all_flags"] = []interface{}{"completly", "different"}
 	require.Nil(filter.RunCommands(&acc.Connection, "INBOX", testMails[0].RawMessage.Uid, cmds))
 	flags, err = acc.Connection.GetFlags("MyTarget", testMails[0].RawMessage.Uid)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]string{"completly", "different"}, flags)
 
 	// Verify resulting INBOX
 	uids, err := acc.Connection.Search("INBOX", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.Empty(uids)
 
 	// Verify resulting MyTarget
 	uids, err = acc.Connection.Search("MyTarget", nil, nil)
-	require.Nil(err)
+	require.NoError(err)
 	require.ElementsMatch([]uint32{1, 2, 3}, uids)
 }

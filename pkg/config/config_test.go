@@ -19,13 +19,13 @@ func TestNewConfigFromFile(t *testing.T) {
 	require.FileExists("../../test/data/configs/valid/accounts.yaml")
 
 	cfg, err = config.NewConfigFromFile("../../test/data/configs/valid/accounts.yaml")
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal("imap.server.de", cfg.Accounts["test"].Connection.Server)
 
 	// NewConfigFromFile full config dir
 	require.DirExists("../../test/data/configs/valid/")
 	cfg, err = config.NewConfigFromFile("../../test/data/configs/valid/")
-	require.Nil(err)
+	require.NoError(err)
 	require.Equal("imap.server.de", cfg.Accounts["test"].Connection.Server)
 
 	// Failed file/dir loading

@@ -93,13 +93,12 @@ func (conn *Connection) Fetch(mailbox string, uids []uint32) ([]*Message, error)
 	items := []imapUtil.FetchItem{section.FetchItem(), imapUtil.FetchUid, imapUtil.FetchEnvelope}
 
 	imapMessages := make(chan *imapUtil.Message, len(uids))
-	done := make(chan error, 1)
+	errs := make(chan error, 1)
 	go func() {
-		done <- conn.imapClient.UidFetch(&seqset, items, imapMessages)
+		errs <- conn.imapClient.UidFetch(&seqset, items, imapMessages)
 	}()
 
-	var err error
-	if err = <-done; err != nil {
+	if err := <-errs; err != nil {
 		log.Errorw("Failed to fetch message from mailbox", err, "mailbox", mailbox)
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func (conn *Connection) Fetch(mailbox string, uids []uint32) ([]*Message, error)
 		fetchedMails = append(fetchedMails, NewMessage(imapMessage, parsedHeaders))
 	}
 
-	return fetchedMails, err
+	return fetchedMails, nil
 }
 
 func (conn *Connection) SearchAndFetch(mailbox string, withFlags []string, withoutFlags []string) ([]*Message, error) {
@@ -176,12 +175,12 @@ func (conn *Connection) GetFlags(mailbox string, uid uint32) ([]string, error) {
 	items := []imapUtil.FetchItem{imapUtil.FetchFlags}
 
 	imapMessages := make(chan *imapUtil.Message, 1)
-	done := make(chan error, 1)
+	errs := make(chan error, 1)
 	go func() {
-		done <- conn.imapClient.UidFetch(&seqset, items, imapMessages)
+		errs <- conn.imapClient.UidFetch(&seqset, items, imapMessages)
 	}()
 
-	if err = <-done; err != nil {
+	if err = <-errs; err != nil {
 		log.Errorw("Failed to fetch message from mailbox", err, "mailbox", mailbox)
 		return nil, err
 	}
@@ -215,22 +214,29 @@ func (conn *Connection) DeleteMailbox(name string) error {
 
 // List mailboxes
 func (conn *Connection) List() (map[string]imapUtil.MailboxInfo, error) {
-	var err error
-
-	mailboxesChan := make(chan *imapUtil.MailboxInfo, 100)
-	done := make(chan error, 1)
+	mailboxesChan := make(chan *imapUtil.MailboxInfo)
+	errs := make(chan error, 1)
 	go func() {
-		done <- conn.imapClient.List("", "*", mailboxesChan)
+		errs <- conn.imapClient.List("", "*", mailboxesChan)
 	}()
 
-	if err = <-done; err != nil {
-		log.Error("Failed to list mailboxes", err)
-		return nil, err
-	}
-
 	mailboxes := map[string]imapUtil.MailboxInfo{}
-	for mailBox := range mailboxesChan {
-		mailboxes[mailBox.Name] = *mailBox
+
+	done := false
+	for ; !done; {
+		select {
+		case err := <-errs:
+			if err != nil {
+				log.Error("Failed to list mailboxes", err)
+				return nil, err
+			}
+		case mailBox := <-mailboxesChan:
+			if mailBox == nil {
+				done = true
+				break
+			}
+			mailboxes[mailBox.Name] = *mailBox
+		}
 	}
 
 	return mailboxes, nil

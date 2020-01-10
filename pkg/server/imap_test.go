@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/arnisoph/postisto/test/integration"
+	imapUtil "github.com/emersion/go-imap"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -269,4 +270,32 @@ func TestParseMailHeaders(t *testing.T) {
 	require.Equal("2392014", fetchedMails[4].Headers["x-mailer-recptid"])
 	require.Equal("foo <a@b.c>, baz <d@e.f>", fetchedMails[4].Headers["cc"])
 	require.ElementsMatch(parserTests[4].received, fetchedMails[4].Headers["received"])
+}
+
+func TestConnection_List(t *testing.T) {
+	require := require.New(t)
+
+	acc := integration.NewStandardAccount(t)
+
+	require.NoError(acc.Connection.Connect())
+	defer func() {
+		require.Nil(acc.Connection.Disconnect())
+	}()
+
+	// ACTUAL TESTS BELOW
+	require.NoError(acc.Connection.CreateMailbox("foo"))
+	require.NoError(acc.Connection.CreateMailbox("bar"))
+
+	mailboxes, err := acc.Connection.List()
+	require.NoError(err)
+	mailboxesExpected := map[string]imapUtil.MailboxInfo{
+		"Drafts": {Attributes: []string{"\\HasNoChildren", "\\Drafts"}, Delimiter: "/", Name: "Drafts"},
+		"INBOX":  {Attributes: []string{"\\HasNoChildren"}, Delimiter: "/", Name: "INBOX"},
+		"Junk":   {Attributes: []string{"\\HasNoChildren", "\\Junk"}, Delimiter: "/", Name: "Junk"},
+		"Sent":   {Attributes: []string{"\\HasNoChildren", "\\Sent"}, Delimiter: "/", Name: "Sent"},
+		"Trash":  {Attributes: []string{"\\HasNoChildren", "\\Trash"}, Delimiter: "/", Name: "Trash"},
+		"bar":    {Attributes: []string{"\\HasNoChildren"}, Delimiter: "/", Name: "bar"},
+		"foo":    {Attributes: []string{"\\HasNoChildren"}, Delimiter: "/", Name: "foo"},
+	}
+	require.Equal(mailboxesExpected, mailboxes)
 }

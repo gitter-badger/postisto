@@ -1,15 +1,12 @@
-settings:
-  logging:
-    mode: dev
 accounts:
   gmail:
+    enabled: false
     connection:
       server: imap.gmail.com
       port: 993
       username: user@gmail.com
       password: <password>
       imaps: true
-      debug: false
     input:
       mailbox: INBOX
 filters:

@@ -16,13 +16,10 @@ import (
 type Config struct {
 	Accounts map[string]Account                  `yaml:"accounts"`
 	Filters  map[string]map[string]filter.Filter `yaml:"filters"`
-	Settings struct {
-		LogConfig log.Config `yaml:"logging"`
-		//UseGPGAgent bool       `yaml:"gpg_use_agent"`
-	} `yaml:"settings"`
 }
 
 type Account struct {
+	Enabled         bool                `yaml:"enabled"`
 	Connection      server.Connection   `yaml:"connection"`
 	InputMailbox    *InputMailboxConfig `yaml:"input"`
 	FallbackMailbox *string             `yaml:"fallback_mailbox"`
@@ -148,16 +145,6 @@ func (cfg Config) validate() (*Config, error) {
 
 	// Filters
 	valCfg.Filters = cfg.Filters
-
-	// Settings
-	valCfg.Settings = cfg.Settings
-	if cfg.Settings.LogConfig.PreSetMode == "" && cfg.Settings.LogConfig.ZapConfig == nil {
-		valCfg.Settings.LogConfig.PreSetMode = "prod"
-	}
-
-	if cfg.Settings.LogConfig.PreSetMode != "" && cfg.Settings.LogConfig.ZapConfig != nil {
-		return nil, fmt.Errorf("log config validation error: either set mode or config")
-	}
 
 	return &valCfg, nil
 }

@@ -2,7 +2,6 @@ package log_test
 
 import (
 	"fmt"
-	"github.com/arnisoph/postisto/pkg/config"
 	"github.com/arnisoph/postisto/pkg/log"
 
 	"github.com/stretchr/testify/require"
@@ -24,29 +23,23 @@ func TestInitWithConfig(t *testing.T) {
 		log.Errorw("Testing an error log event.", fmt.Errorf("test error"), "with", "fields", "numeric work too", 42, "or even maps", map[string]string{"foo": "bar"}, "why not also try slices", []int{1, 3, 3, 7})
 	}
 
-	fmt.Println("Log with full user-defined log config (zap.Config)")
-	cfg, err := config.NewConfigFromFile("../../test/data/configs/valid/test/CustomLogConfig.yaml")
-	require.NoError(err)
-	require.NotNil(cfg)
-
-	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
+	log.Info("log in TRACE")
+	require.NoError(log.InitWithConfig("trace", false))
 	testLogging()
 
-	fmt.Println("Log with program default (preset mode debug)")
+	log.Info("log in DEBUG")
+	require.NoError(log.InitWithConfig("debug", false))
 	testLogging()
 
-	fmt.Println("Log with preset mode dev")
-	cfg, err = config.NewConfigWithDefaults()
-	require.NoError(err)
-	require.NotNil(cfg)
-	cfg.Settings.LogConfig.PreSetMode = "dev"
-	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
+	log.Info("log in INFO")
+	require.NoError(log.InitWithConfig("info", false))
 	testLogging()
 
-	fmt.Println("Log with user default (preset mode prod)")
-	cfg, err = config.NewConfigWithDefaults()
-	require.NoError(err)
-	require.NotNil(cfg)
-	require.NoError(log.InitWithConfig(cfg.Settings.LogConfig))
+	log.Info("log in INFO and with JSON")
+	require.NoError(log.InitWithConfig("info", true))
+	testLogging()
+
+	log.Info("log in ERROR")
+	require.NoError(log.InitWithConfig("error", false))
 	testLogging()
 }

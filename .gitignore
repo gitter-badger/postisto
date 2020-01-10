@@ -1,7 +1,7 @@
 *.tmp
 /postisto
 coverage.txt
-test/data/configs/examples/**/*.yaml
-test/data/configs/examples/**/*.yml
+config/**/*.yaml
+config/**/*.yml
 test/data/configs/invalid-unreadable-file/
 vendor/

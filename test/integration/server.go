@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/config"
+	"github.com/arnisoph/postisto/pkg/log"
 	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/redis.v4"
@@ -18,14 +19,16 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 
 	require := require.New(t)
 
+	require.NoError(log.InitWithConfig("debug", false))
+
 	if cacertfile == nil {
 		defaultcacert := "../../test/data/certs/ca.pem"
 		cacertfile = &defaultcacert
 	}
 
 	acc := config.Account{
+		Enabled: true,
 		Connection: server.Connection{
-			Enabled:  true,
 			Server:   "localhost",
 			Port:     port,
 			Username: NewUsername(username),
@@ -35,7 +38,6 @@ func NewAccount(t *testing.T, username string, password string, port int, startt
 			Starttls:      &starttls,
 			TLSVerify:     &tlsverify,
 			TLSCACertFile: *cacertfile,
-			DebugIMAP:     false,
 		},
 		InputMailbox: &config.InputMailboxConfig{
 			Mailbox:      "INBOX",

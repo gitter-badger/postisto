@@ -6,52 +6,50 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var log *zap.SugaredLogger
+var log struct {
+	level string
+	json  bool
 
-type Config struct {
-	PreSetMode string      `yaml:"mode"`
-	ZapConfig  *zap.Config `yaml:"dangerousAdvancedZapConfig"`
+	logger *zap.SugaredLogger
 }
 
 func init() {
-	var logConfig Config
-	logConfig.PreSetMode = "debug"
-
-	if err := InitWithConfig(logConfig); err != nil {
+	if err := InitWithConfig("info", false); err != nil {
 		panic(fmt.Sprintf("Failed to initialize logger: %q\n\nThat should not happen. Please call a doctor.", err.Error()))
 	}
 }
 
-func InitWithConfig(logConfig Config) error {
-	if log != nil {
+func InitWithConfig(logLevel string, logJson bool) error {
+	if log.logger != nil {
 		Debug("Logger already initialized. Will re-initialize now..")
 	}
 
-	var cfg *zap.Config
+	cfg := zap.NewProductionConfig()
 
-	switch logConfig.PreSetMode {
+	switch logLevel {
+	case "trace":
+		cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
 	case "debug":
-		config := zap.NewDevelopmentConfig()
-		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
-		cfg = &config
-	case "dev":
-		config := zap.NewDevelopmentConfig()
-		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-		cfg = &config
-	case "prod":
-		config := zap.NewProductionConfig()
-		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-		cfg = &config
+		cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	case "info":
+		cfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+		cfg.Development = false
+	case "error":
+		cfg.Level = zap.NewAtomicLevelAt(zapcore.ErrorLevel)
+		cfg.Development = false
 	default:
-		if logConfig.ZapConfig == nil {
-			return fmt.Errorf("log config not set")
-		}
-
-		cfg = logConfig.ZapConfig
+		return fmt.Errorf("unknown log level %q", logLevel)
 	}
 
+	if logJson {
+		cfg.Encoding = "json"
+	} else {
+		cfg.Encoding = "console"
+	}
+
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	cfg.DisableStacktrace = true
+
 	rawLogger, err := cfg.Build()
 
 	if err != nil {
@@ -59,54 +57,60 @@ func InitWithConfig(logConfig Config) error {
 	}
 	defer rawLogger.Sync()
 
-	log = rawLogger.WithOptions(zap.AddCallerSkip(1)).Sugar() // pkg variable
-	Info("logging successfully initialized")
+	log.level = logLevel
+	log.json = logJson
+	log.logger = rawLogger.WithOptions(zap.AddCallerSkip(1)).Sugar() // pkg variable
+	Debug("logging successfully initialized")
 
 	return err
 }
 
+func GetLogLevel() string {
+	return log.level
+}
+
 func Panic(msg string, err error) {
-	log.With("err", err).Panic(msg)
+	log.logger.With("err", err).Panic(msg)
 }
 
 func Panicw(msg string, err error, context ...interface{}) {
 	context = append(context, "err")
 	context = append(context, err)
-	log.With(context...).Panic(msg)
+	log.logger.With(context...).Panic(msg)
 }
 
 func Fatal(msg string, err error) {
-	log.With("err", err).Fatal(msg)
+	log.logger.With("err", err).Fatal(msg)
 }
 
 func Fatalw(msg string, err error, context ...interface{}) {
 	context = append(context, "err")
 	context = append(context, err)
-	log.With(context...).Fatal(msg)
+	log.logger.With(context...).Fatal(msg)
 }
 
 func Error(msg string, err error) {
-	log.With("err", err).Error(msg)
+	log.logger.With("err", err).Error(msg)
 }
 
 func Errorw(msg string, err error, context ...interface{}) {
 	context = append(context, "err")
 	context = append(context, err)
-	log.With(context...).Error(msg)
+	log.logger.With(context...).Error(msg)
 }
 
 func Info(msg string) {
-	log.Info(msg)
+	log.logger.Info(msg)
 }
 
 func Infow(msg string, context ...interface{}) {
-	log.With(context...).Info(msg)
+	log.logger.With(context...).Info(msg)
 }
 
 func Debug(msg string) {
-	log.Debug(msg)
+	log.logger.Debug(msg)
 }
 
 func Debugw(msg string, context ...interface{}) {
-	log.With(context...).Debug(msg)
+	log.logger.With(context...).Debug(msg)
 }

@@ -39,7 +39,6 @@ func TestConnect(t *testing.T) {
 	require.NoError(acc.Connection.Connect())
 
 	acc.Connection.Password = "wrongpass"
-	acc.Connection.DebugIMAP = true
 	require.EqualError(acc.Connection.Connect(), "Authentication failed.")
 
 	acc = *accs["starttls_wrongport"]

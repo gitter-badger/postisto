@@ -5,6 +5,5 @@ accounts:
       server: localhost
       port: 10143
       cacertfile: ../../test/data/certs/ca.pem
-      debug: false
     input:
       mailbox: PreInbox

@@ -11,7 +11,6 @@ import (
 )
 
 type Connection struct {
-	Enabled       bool   `yaml:"enabled"`
 	Server        string `yaml:"server"`
 	Port          int    `yaml:"port"`
 	Username      string `yaml:"username"`
@@ -20,7 +19,6 @@ type Connection struct {
 	Starttls      *bool  `yaml:"starttls"`
 	TLSVerify     *bool  `yaml:"tlsverify"`
 	TLSCACertFile string `yaml:"cacertfile"`
-	DebugIMAP     bool   `yaml:"debug"`
 
 	imapClient *imapClientPkg.Client
 }
@@ -82,7 +80,7 @@ func (conn *Connection) Connect() error {
 		}
 	}
 
-	if conn.DebugIMAP {
+	if log.GetLogLevel() == "trace" {
 		imapClient.SetDebug(os.Stderr)
 	}
 

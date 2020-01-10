@@ -16,7 +16,7 @@ func TestUploadMails(t *testing.T) {
 
 	require.NoError(acc.Connection.Connect())
 	defer func() {
-			require.Nil(acc.Connection.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}()
 
 	// ACTUAL TESTS BELOW
@@ -33,7 +33,7 @@ func TestSearchAndFetchMails(t *testing.T) {
 
 	require.NoError(acc.Connection.Connect())
 	defer func() {
-			require.Nil(acc.Connection.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
@@ -116,7 +116,7 @@ func TestMoveMails(t *testing.T) {
 
 	require.NoError(acc.Connection.Connect())
 	defer func() {
-			require.Nil(acc.Connection.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
@@ -161,7 +161,7 @@ func TestDeleteMails(t *testing.T) {
 
 	require.NoError(acc.Connection.Connect())
 	defer func() {
-			require.Nil(acc.Connection.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}()
 
 	for i := 1; i <= numTestmails; i++ {
@@ -202,7 +202,7 @@ func TestParseMailHeaders(t *testing.T) {
 
 	require.NoError(acc.Connection.Connect())
 	defer func() {
-			require.Nil(acc.Connection.Disconnect())
+		require.Nil(acc.Connection.Disconnect())
 	}()
 
 	for i := 1; i <= numTestmails; i++ {

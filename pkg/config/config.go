@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/arnisoph/postisto/pkg/filter"
 	"github.com/arnisoph/postisto/pkg/log"
+	"github.com/arnisoph/postisto/pkg/server"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -11,6 +12,26 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+type Config struct {
+	Accounts map[string]Account                  `yaml:"accounts"`
+	Filters  map[string]map[string]filter.Filter `yaml:"filters"`
+	Settings struct {
+		LogConfig log.Config `yaml:"logging"`
+		//UseGPGAgent bool       `yaml:"gpg_use_agent"`
+	} `yaml:"settings"`
+}
+
+type Account struct {
+	Connection      server.Connection   `yaml:"connection"`
+	InputMailbox    *InputMailboxConfig `yaml:"input"`
+	FallbackMailbox *string             `yaml:"fallback_mailbox"`
+}
+
+type InputMailboxConfig struct {
+	Mailbox      string   `yaml:"mailbox"`
+	WithoutFlags []string `yaml:"without_flags,flow"`
+}
 
 func NewConfig() *Config {
 	return new(Config)
@@ -91,13 +112,12 @@ func (cfg Config) validate() (*Config, error) {
 	// Accounts
 	if len(cfg.Accounts) == 0 {
 		log.Info("Warning: no accounts configured")
-		//return nil, fmt.Errorf("no account configured")
 	}
 
 	for accName, acc := range cfg.Accounts {
 		newAcc := Account{
-			Connection: acc.Connection,
-			InputMailbox: acc.InputMailbox,
+			Connection:      acc.Connection,
+			InputMailbox:    acc.InputMailbox,
 			FallbackMailbox: acc.FallbackMailbox,
 		}
 		// Connection
@@ -124,7 +144,6 @@ func (cfg Config) validate() (*Config, error) {
 		}
 
 		valCfg.Accounts[accName] = newAcc
-		//fmt.Printf("<%q %#v\n", accName, acc.InputMailbox)
 	}
 
 	// Filters

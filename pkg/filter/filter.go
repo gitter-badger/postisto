@@ -6,7 +6,6 @@ import (
 	"github.com/arnisoph/postisto/pkg/server"
 )
 
-
 //func (filterSet FilterSet) Names() []string {
 //	keys := make([]string, len(filterSet))
 //
@@ -26,7 +25,6 @@ type Filter struct {
 type FilterOps map[string]interface{}
 type RuleSet []Rule
 type Rule map[string][]map[string]interface{}
-
 
 func GetUnsortedMsgs(srv *server.Connection, mailbox string, withoutFlags []string) ([]*server.Message, error) {
 	return srv.SearchAndFetch(mailbox, nil, withoutFlags)
@@ -70,14 +68,14 @@ func EvaluateFilterSetsOnMsgs(srv *server.Connection, inputMailbox string, input
 	}
 
 	for _, msg := range remainingMsgs {
-		if fallbackMailbox ==inputMailbox || fallbackMailbox == "" {
+		if fallbackMailbox == inputMailbox || fallbackMailbox == "" {
 			log.Infow("No filter matched to this message. Flagging the message now.", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId, "flags", []interface{}{server.FlaggedFlag})
 			if err := srv.SetFlags(inputMailbox, []uint32{msg.RawMessage.Uid}, "+FLAGS", []interface{}{server.FlaggedFlag}, false); err != nil {
 				return err
 			}
 		} else {
 			log.Infow("No filter matched to this message. Moving it to the fallback mailbox now.", "uid", msg.RawMessage.Uid, "message_id", msg.RawMessage.Envelope.MessageId, "mailbox", fallbackMailbox)
-			if err := srv.Move([]uint32{msg.RawMessage.Uid},inputMailbox, fallbackMailbox); err != nil {
+			if err := srv.Move([]uint32{msg.RawMessage.Uid}, inputMailbox, fallbackMailbox); err != nil {
 				return err
 			}
 		}

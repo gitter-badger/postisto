@@ -36,7 +36,7 @@ func TestParseRuleSet(t *testing.T) {
 		},
 		{
 			filters: map[string]filter.Filter{
-				"simple 101 comparison in or": {		
+				"simple 101 comparison in or": {
 					RuleSet: filter.RuleSet{
 						{
 							"or": []map[string]interface{}{

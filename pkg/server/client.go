@@ -71,7 +71,7 @@ func (conn *Connection) Connect() error {
 	} else {
 		if imapClient, err = imapClientPkg.Dial(fmt.Sprintf("%v:%v", conn.Server, conn.Port)); err != nil {
 			log.Errorw("Failed to connect to server", err, "server", conn.Server)
-			return  err
+			return err
 		}
 
 		if *conn.Starttls {
@@ -88,13 +88,10 @@ func (conn *Connection) Connect() error {
 
 	if err = imapClient.Login(conn.Username, conn.Password); err != nil {
 		log.Errorw("Failed to login to server", err, "server", conn.Server, "username", conn.Username)
-		return  err
+		return err
 	}
 
 	conn.imapClient = imapClient
-	//conn := new(Connection)
-	//conn.client = conn
-
 	return err
 }
 
